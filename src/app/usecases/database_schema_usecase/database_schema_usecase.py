@@ -70,7 +70,7 @@ class DatabaseSchemaUseCase:
             base_filename = os.path.splitext(os.path.basename(json_file_path))[0]
             
             # Create output paths
-            output_file = os.path.join(output_dir, f'{base_filename}_schema.json')
+            output_file = os.path.join(output_dir, f'{base_filename}.json')
             
             # Save the updated JSON with schema info
             with open(output_file, 'w') as file:
