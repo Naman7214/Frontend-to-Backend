@@ -4,7 +4,7 @@ import os
 import json
 
 class EndpointUseCase:
-    def __init__(self, endpoint_helper: EndpointHelper = Depends(EndpointHelper)) -> None:
+    def __init__(self, endpoint_helper: EndpointHelper = Depends()) -> None:
         self.endpoint_helper = endpoint_helper
     
     async def execute(self, repo_path: str, output_path: str = None, verbose: bool = False, max_files: int = None, 
@@ -49,4 +49,4 @@ class EndpointUseCase:
             if verbose:
                 print(f"Saved endpoints to {output_path}")
                 
-        return result
+        return output_path
