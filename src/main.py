@@ -3,6 +3,7 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from src.app.config.database import mongodb_database
+from src.app.routes.backend_code_gen_route import router as backend_code_gen_router
 
 
 @asynccontextmanager
@@ -26,3 +27,6 @@ app.add_middleware(
 @app.get("/")
 async def root():
     return {"message": "Welcome to my FastAPI application!"}
+
+# Include routers
+app.include_router(backend_code_gen_router, tags=["Backend Code Generator"])
