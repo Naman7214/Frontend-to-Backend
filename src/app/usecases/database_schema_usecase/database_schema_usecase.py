@@ -7,7 +7,7 @@ import os
 from typing import Dict, List, Any
 from fastapi import Depends, HTTPException
 from src.app.usecases.database_schema_usecase.helper import DatabaseSchemaHelper
-
+from src.app.utils.store_response import store_json_response
 
 class DatabaseSchemaUseCase:    
     def __init__(self, helper: DatabaseSchemaHelper = Depends()):
