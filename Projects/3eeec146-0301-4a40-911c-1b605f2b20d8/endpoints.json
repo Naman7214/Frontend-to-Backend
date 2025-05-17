@@ -1,0 +1,1210 @@
+{
+  "endpoints": [
+    {
+      "endpointName": "/api/users/authenticate",
+      "method": "POST",
+      "description": "Authenticate user credentials (password or PIN) to unlock the lock screen and initiate user session",
+      "authRequired": false,
+      "payload": {
+        "username": {
+          "type": "string",
+          "required": true,
+          "description": "The user's login identifier"
+        },
+        "password": {
+          "type": "string",
+          "required": true,
+          "description": "The password or PIN entered by the user"
+        },
+        "type": {
+          "type": "string",
+          "required": false,
+          "description": "Authentication type indicating 'password' or 'pin'"
+        }
+      },
+      "queryParams": {},
+      "response": {
+        "success": {
+          "type": "boolean",
+          "description": "Whether authentication was successful"
+        },
+        "token": {
+          "type": "string",
+          "description": "Authentication token for session management"
+        },
+        "user": {
+          "type": "object",
+          "description": "User profile data",
+          "fields": {
+            "id": {
+              "type": "string",
+              "description": "Unique user identifier"
+            },
+            "name": {
+              "type": "string",
+              "description": "User's full name"
+            }
+          }
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/background/index.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/users/:id/profile",
+      "method": "GET",
+      "description": "Retrieve user profile information such as the user's display name used on the lock screen",
+      "authRequired": true,
+      "payload": {},
+      "queryParams": {},
+      "response": {
+        "id": {
+          "type": "string",
+          "description": "Unique user identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's display name"
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL to user's profile image"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/background/index.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/wallpapers/:id",
+      "method": "GET",
+      "description": "Retrieve wallpaper image data or metadata for background and lock screen display",
+      "authRequired": false,
+      "payload": {},
+      "queryParams": {},
+      "response": {
+        "id": {
+          "type": "string",
+          "description": "Wallpaper identifier"
+        },
+        "src": {
+          "type": "string",
+          "description": "Wallpaper image filename or URL"
+        },
+        "act": {
+          "type": "string",
+          "description": "Status or action related to wallpaper such as restart"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/background/index.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/widgets/onthisday",
+      "method": "GET",
+      "description": "Fetch historical events for the current day to display a random event and its date",
+      "authRequired": false,
+      "payload": {},
+      "queryParams": {
+        "month": {
+          "type": "number",
+          "required": true,
+          "description": "Month number for retrieving events"
+        },
+        "day": {
+          "type": "number",
+          "required": true,
+          "description": "Day number for retrieving events"
+        }
+      },
+      "response": {
+        "events": {
+          "type": "array",
+          "description": "List of historical events for the date",
+          "items": {
+            "year": {
+              "type": "number",
+              "description": "Year of the event"
+            },
+            "text": {
+              "type": "string",
+              "description": "Description of the event"
+            }
+          }
+        }
+      },
+      "databaseRequired": false,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/actions/index.js"
+      ]
+    },
+    {
+      "endpointName": "/api/news",
+      "method": "GET",
+      "description": "Retrieve latest news articles to display in the widget news list",
+      "authRequired": false,
+      "payload": {},
+      "queryParams": {},
+      "response": {
+        "articles": {
+          "type": "array",
+          "description": "List of news articles",
+          "items": {
+            "title": {
+              "type": "string",
+              "description": "Article title"
+            },
+            "description": {
+              "type": "string",
+              "description": "Article description"
+            },
+            "source": {
+              "type": "object",
+              "description": "Source information",
+              "fields": {
+                "name": {
+                  "type": "string",
+                  "description": "Source name"
+                }
+              }
+            },
+            "url": {
+              "type": "string",
+              "description": "URL to full article"
+            },
+            "publishedAt": {
+              "type": "string",
+              "description": "Publish date"
+            }
+          }
+        }
+      },
+      "databaseRequired": false,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/actions/index.js"
+      ]
+    },
+    {
+      "endpointName": "/api/apps",
+      "method": "POST",
+      "description": "Install a new application with specified name, icon, type, and data such as iframe URL",
+      "authRequired": true,
+      "payload": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "The name of the app to install"
+        },
+        "icon": {
+          "type": "string",
+          "required": true,
+          "description": "URL or path to the icon representing the app"
+        },
+        "type": {
+          "type": "string",
+          "required": true,
+          "description": "Type of the app (e.g., game, utility, iframe)"
+        },
+        "data": {
+          "type": "object",
+          "required": true,
+          "description": "App-specific data such as iframe url and configurations",
+          "fields": {
+            "type": {
+              "type": "string",
+              "required": true,
+              "description": "Sub-type of embedded content, e.g., 'IFrame'"
+            },
+            "url": {
+              "type": "string",
+              "required": true,
+              "description": "URL to be loaded in iframe"
+            },
+            "invert": {
+              "type": "boolean",
+              "required": false,
+              "description": "Optional flag for display preferences"
+            }
+          }
+        }
+      },
+      "queryParams": {},
+      "response": {
+        "success": {
+          "type": "boolean",
+          "description": "Indicates whether the app was successfully installed"
+        },
+        "appId": {
+          "type": "string",
+          "description": "Unique identifier assigned to the installed app"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/terminal.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/apps/:id",
+      "method": "DELETE",
+      "description": "Uninstall or delete an application by its app identifier",
+      "authRequired": true,
+      "payload": {},
+      "queryParams": {},
+      "response": {
+        "success": {
+          "type": "boolean",
+          "description": "Indicates whether the app was successfully uninstalled"
+        },
+        "message": {
+          "type": "string",
+          "description": "Additional information or status message"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/terminal.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/apps",
+      "method": "GET",
+      "description": "Retrieve the user's app data including pinned apps, recent apps, quick searches, and all installed apps with metadata for display in the start menu",
+      "authRequired": true,
+      "payload": {},
+      "queryParams": {},
+      "response": {
+        "pnApps": {
+          "type": "array",
+          "description": "List of pinned apps",
+          "items": {
+            "name": {
+              "type": "string",
+              "description": "App display name"
+            },
+            "icon": {
+              "type": "string",
+              "description": "Icon source for the app"
+            },
+            "action": {
+              "type": "string",
+              "description": "Action identifier triggered when app is clicked"
+            },
+            "payload": {
+              "type": "string",
+              "description": "Payload to pass for the action"
+            },
+            "empty": {
+              "type": "boolean",
+              "description": "Indicates a placeholder empty app slot"
+            }
+          }
+        },
+        "rcApps": {
+          "type": "array",
+          "description": "List of recommended or recently used apps",
+          "items": {
+            "name": {
+              "type": "string",
+              "description": "App display name"
+            },
+            "icon": {
+              "type": "string",
+              "description": "Icon source for the app"
+            },
+            "action": {
+              "type": "string",
+              "description": "Action identifier triggered when app is clicked"
+            },
+            "payload": {
+              "type": "string",
+              "description": "Payload to pass for the action"
+            },
+            "lastUsed": {
+              "type": "number|string",
+              "description": "Time or label indicating last usage"
+            }
+          }
+        },
+        "qksrch": {
+          "type": "array",
+          "description": "List of quick search items with icons and labels",
+          "items": {
+            "fafa": {
+              "type": "string",
+              "description": "Font awesome icon name"
+            },
+            "reg": {
+              "type": "boolean",
+              "description": "Regular style icon flag"
+            },
+            "label": {
+              "type": "string",
+              "description": "Search label or URL"
+            }
+          }
+        },
+        "allApps": {
+          "type": "array",
+          "description": "List of all apps sorted alphabetically (filtered to exclude some keys like 'hz')",
+          "items": {
+            "name": {
+              "type": "string",
+              "description": "App display name"
+            },
+            "icon": {
+              "type": "string",
+              "description": "App icon source"
+            },
+            "action": {
+              "type": "string",
+              "description": "Action triggered on click"
+            },
+            "payload": {
+              "type": "string",
+              "description": "Payload for the action"
+            }
+          }
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/components/start/start.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/search",
+      "method": "GET",
+      "description": "Perform search queries for apps, documents or web results based on user input in the start menu search bar",
+      "authRequired": true,
+      "payload": {},
+      "queryParams": {
+        "q": {
+          "type": "string",
+          "required": true,
+          "description": "Query string to search for matching apps or content"
+        },
+        "type": {
+          "type": "string",
+          "required": false,
+          "description": "Type of search context such as 'All', 'Apps', 'Documents', 'Web', or 'More'"
+        }
+      },
+      "response": {
+        "matches": {
+          "type": "array",
+          "description": "List of matched search results",
+          "items": {
+            "name": {
+              "type": "string",
+              "description": "Display name of the matched app or document"
+            },
+            "type": {
+              "type": "string",
+              "description": "Match category e.g. app, web, document"
+            },
+            "icon": {
+              "type": "string",
+              "description": "Icon source for the match"
+            },
+            "action": {
+              "type": "string",
+              "description": "Action identifier to perform when opening"
+            },
+            "payload": {
+              "type": "string",
+              "description": "Payload passed to action"
+            }
+          }
+        },
+        "bestMatch": {
+          "type": "object",
+          "description": "Best single match result for the given query"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/components/start/start.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/users/:id",
+      "method": "GET",
+      "description": "Get user profile data such as the display name to show in the start menu",
+      "authRequired": true,
+      "payload": {},
+      "queryParams": {},
+      "response": {
+        "id": {
+          "type": "string",
+          "description": "Unique user identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's display name"
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL of user's profile image"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/components/start/start.jsx",
+        "src/containers/applications/apps/settings.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/system/power",
+      "method": "POST",
+      "description": "Trigger system power actions such as lock, shutdown, or restart from the start menu power options",
+      "authRequired": true,
+      "payload": {
+        "action": {
+          "type": "string",
+          "required": true,
+          "description": "Power action requested: 'lock', 'shutdown', or 'restart'"
+        }
+      },
+      "queryParams": {},
+      "response": {
+        "success": {
+          "type": "boolean",
+          "description": "Indicates if the power action was successfully initiated"
+        },
+        "message": {
+          "type": "string",
+          "description": "Optional message describing result or errors"
+        }
+      },
+      "databaseRequired": false,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/components/start/start.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/oobe/user-settings",
+      "method": "PATCH",
+      "description": "Update user Out-Of-Box Experience (OOBE) settings such as PC name, region, and keyboard layout",
+      "authRequired": true,
+      "payload": {
+        "pcName": {
+          "type": "string",
+          "required": false,
+          "description": "New PC name set by the user"
+        },
+        "region": {
+          "type": "string",
+          "required": false,
+          "description": "User selected country or region"
+        },
+        "keyboardLayout": {
+          "type": "string",
+          "required": false,
+          "description": "User selected keyboard layout"
+        }
+      },
+      "queryParams": {},
+      "response": {
+        "success": {
+          "type": "boolean",
+          "description": "Whether the settings were successfully updated"
+        },
+        "restartRequired": {
+          "type": "boolean",
+          "description": "Indicates if a system restart is needed for changes to take effect"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/getstarted.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/oobe/updates/check",
+      "method": "GET",
+      "description": "Check for system updates during OOBE setup",
+      "authRequired": false,
+      "payload": {},
+      "queryParams": {},
+      "response": {
+        "updatesAvailable": {
+          "type": "boolean",
+          "description": "Indicates if updates are available"
+        },
+        "details": {
+          "type": "object",
+          "description": "Details about available updates, if any"
+        }
+      },
+      "databaseRequired": false,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/getstarted.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/network/connections",
+      "method": "GET",
+      "description": "Retrieve available network connections (Ethernet, Wi-Fi) during setup to connect the device to the internet",
+      "authRequired": false,
+      "payload": {},
+      "queryParams": {},
+      "response": {
+        "connections": {
+          "type": "array",
+          "description": "List of available network connections",
+          "items": {
+            "id": {
+              "type": "string",
+              "description": "Unique identifier for the connection"
+            },
+            "name": {
+              "type": "string",
+              "description": "Connection display name"
+            },
+            "type": {
+              "type": "string",
+              "description": "Type of connection (e.g., Ethernet, Wi-Fi)"
+            },
+            "status": {
+              "type": "string",
+              "description": "Current connection status (e.g., connected, not connected)"
+            },
+            "security": {
+              "type": "string",
+              "description": "Security type if applicable (e.g., WPA2)"
+            }
+          }
+        }
+      },
+      "databaseRequired": false,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/getstarted.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/network/connect",
+      "method": "POST",
+      "description": "Submit network connection credentials to connect the device during setup",
+      "authRequired": false,
+      "payload": {
+        "connectionId": {
+          "type": "string",
+          "required": true,
+          "description": "Identifier of the network to connect to"
+        },
+        "password": {
+          "type": "string",
+          "required": false,
+          "description": "Password for secured Wi-Fi networks"
+        }
+      },
+      "queryParams": {},
+      "response": {
+        "success": {
+          "type": "boolean",
+          "description": "Indicates if connection was successful"
+        },
+        "error": {
+          "type": "string",
+          "description": "Error message if connection failed"
+        }
+      },
+      "databaseRequired": false,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/getstarted.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/wallpapers",
+      "method": "GET",
+      "description": "Retrieve available wallpapers and themes for personalization options shown in settings",
+      "authRequired": false,
+      "payload": {},
+      "queryParams": {},
+      "response": {
+        "wallpapers": {
+          "type": "array",
+          "description": "List of available wallpapers and theme metadata",
+          "items": {
+            "id": {
+              "type": "string",
+              "description": "Wallpaper identifier"
+            },
+            "src": {
+              "type": "string",
+              "description": "Wallpaper image filename or URL"
+            },
+            "themes": {
+              "type": "array",
+              "description": "List of themes associated with wallpaper",
+              "items": {
+                "type": "string",
+                "description": "Theme name or identifier"
+              }
+            }
+          }
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/settings.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/wallpapers",
+      "method": "POST",
+      "description": "Set user wallpaper and theme preferences selected in settings app",
+      "authRequired": true,
+      "payload": {
+        "theme": {
+          "type": "string",
+          "required": true,
+          "description": "Selected theme name"
+        },
+        "src": {
+          "type": "string",
+          "required": true,
+          "description": "Wallpaper image filename or URL to set as background"
+        }
+      },
+      "queryParams": {},
+      "response": {
+        "success": {
+          "type": "boolean",
+          "description": "Indicates if wallpaper and theme update was successful"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/settings.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/system/updates/check",
+      "method": "GET",
+      "description": "Check for system updates as triggered by the user in the Windows Update settings panel",
+      "authRequired": false,
+      "payload": {},
+      "queryParams": {},
+      "response": {
+        "updatesAvailable": {
+          "type": "boolean",
+          "description": "Whether system updates are available"
+        },
+        "details": {
+          "type": "object",
+          "description": "Details about available updates, including version and changelog"
+        }
+      },
+      "databaseRequired": false,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/settings.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/files/:id",
+      "method": "GET",
+      "description": "Retrieve contents and metadata of a folder or directory by its unique identifier. Used to load folder contents and directory structure for navigation and display in the file explorer.",
+      "authRequired": true,
+      "payload": {},
+      "queryParams": {},
+      "response": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the folder or directory"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the folder"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of item, e.g. 'folder' or 'file'"
+        },
+        "info": {
+          "type": "object",
+          "description": "Additional info such as icons for display"
+        },
+        "data": {
+          "type": "array",
+          "description": "Array of child items within the folder",
+          "items": {
+            "id": {
+              "type": "string",
+              "description": "Child item unique identifier"
+            },
+            "name": {
+              "type": "string",
+              "description": "Child item display name"
+            },
+            "type": {
+              "type": "string",
+              "description": "Child item type (file or folder)"
+            },
+            "info": {
+              "type": "object",
+              "description": "Child item metadata including icons"
+            },
+            "data": {
+              "type": "array",
+              "description": "For folders, nested content array"
+            }
+          }
+        },
+        "host": {
+          "type": "object|null",
+          "description": "Reference to parent folder data for navigation"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/explorer.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/files/path",
+      "method": "POST",
+      "description": "Change current directory by providing a full path string, returning folder metadata and contents at that path. Used when user navigates via path input field.",
+      "authRequired": true,
+      "payload": {
+        "path": {
+          "type": "string",
+          "required": true,
+          "description": "String representing the target directory path"
+        }
+      },
+      "queryParams": {},
+      "response": {
+        "id": {
+          "type": "string",
+          "description": "Unique ID of the directory at given path"
+        },
+        "name": {
+          "type": "string",
+          "description": "Directory name"
+        },
+        "data": {
+          "type": "array",
+          "description": "Contents of the directory"
+        },
+        "info": {
+          "type": "object",
+          "description": "Directory related metadata such as icon"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/explorer.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/files/open",
+      "method": "POST",
+      "description": "Open a file by its unique ID, initiating read or open action. This could trigger file preview, editor, or execution depending on file type.",
+      "authRequired": true,
+      "payload": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "description": "Identifier of the file to open"
+        }
+      },
+      "queryParams": {},
+      "response": {
+        "success": {
+          "type": "boolean",
+          "description": "Indicates if file open operation succeeded"
+        },
+        "fileData": {
+          "type": "object",
+          "description": "Optional metadata or content of opened file"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/explorer.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/music/songs/:id",
+      "method": "GET",
+      "description": "Fetch detailed information and streaming source for a specific song by its ID",
+      "authRequired": false,
+      "payload": {},
+      "queryParams": {},
+      "response": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the song"
+        },
+        "name": {
+          "type": "string",
+          "description": "Song title"
+        },
+        "artist": {
+          "type": "string",
+          "description": "Artist name(s)"
+        },
+        "album": {
+          "type": "string",
+          "description": "Album title"
+        },
+        "albumArt": {
+          "type": "string",
+          "description": "URL for album artwork image"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Duration of the song in seconds"
+        },
+        "src": {
+          "type": "string",
+          "description": "Direct audio source URL or stream link"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/spotify.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/music/songs",
+      "method": "POST",
+      "description": "Fetch multiple songs' details given an array of song IDs, used to load songs in playlist or mix",
+      "authRequired": false,
+      "payload": {
+        "ids": {
+          "type": "array",
+          "required": true,
+          "description": "Array of song ID strings to fetch"
+        }
+      },
+      "queryParams": {},
+      "response": {
+        "songs": {
+          "type": "array",
+          "description": "Array of song detail objects",
+          "items": {
+            "id": {
+              "type": "string",
+              "description": "Unique song identifier"
+            },
+            "name": {
+              "type": "string",
+              "description": "Song title"
+            },
+            "artist": {
+              "type": "string",
+              "description": "Song artist(s)"
+            },
+            "album": {
+              "type": "string",
+              "description": "Album title"
+            },
+            "albumArt": {
+              "type": "string",
+              "description": "Album artwork URL"
+            },
+            "duration": {
+              "type": "number",
+              "description": "Duration in seconds"
+            },
+            "src": {
+              "type": "string",
+              "description": "Audio source URL"
+            }
+          }
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/spotify.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/music/albums/:id",
+      "method": "GET",
+      "description": "Retrieve album details including metadata and list of songs for a specific album by its ID",
+      "authRequired": false,
+      "payload": {},
+      "queryParams": {},
+      "response": {
+        "album_name": {
+          "type": "string",
+          "description": "Name of the album"
+        },
+        "album_artist": {
+          "type": "string",
+          "description": "Name(s) of album artist(s)"
+        },
+        "album_image": {
+          "type": "string",
+          "description": "Album cover image URL"
+        },
+        "year": {
+          "type": "number",
+          "description": "Year of album release"
+        },
+        "songs": {
+          "type": "array",
+          "description": "List of songs in the album",
+          "items": {
+            "song_id": {
+              "type": "string",
+              "description": "Unique song identifier"
+            },
+            "song_name": {
+              "type": "string",
+              "description": "Title of the song"
+            },
+            "song_artist": {
+              "type": "string",
+              "description": "Artist(s) of the song"
+            },
+            "song_image": {
+              "type": "string",
+              "description": "Album or song image URL"
+            },
+            "song_duration": {
+              "type": "number",
+              "description": "Duration in seconds"
+            },
+            "album_name": {
+              "type": "string",
+              "description": "Associated album name"
+            },
+            "year": {
+              "type": "number",
+              "description": "Year of song or album release"
+            }
+          }
+        },
+        "copyright": {
+          "type": "string",
+          "description": "Copyright text for album"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/spotify.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/music/search",
+      "method": "GET",
+      "description": "Search for songs and albums matching a query string",
+      "authRequired": false,
+      "payload": {},
+      "queryParams": {
+        "query": {
+          "type": "string",
+          "required": true,
+          "description": "Text query for searching songs or albums"
+        }
+      },
+      "response": {
+        "songs": {
+          "type": "array",
+          "description": "Search results matching songs",
+          "items": {
+            "id": {
+              "type": "string",
+              "description": "Song ID"
+            },
+            "title": {
+              "type": "string",
+              "description": "Song title"
+            },
+            "description": {
+              "type": "string",
+              "description": "Artist or additional description"
+            },
+            "image": {
+              "type": "string",
+              "description": "Song image URL"
+            }
+          }
+        },
+        "albums": {
+          "type": "array",
+          "description": "Search results matching albums",
+          "items": {
+            "id": {
+              "type": "string",
+              "description": "Album ID"
+            },
+            "title": {
+              "type": "string",
+              "description": "Album title"
+            },
+            "description": {
+              "type": "string",
+              "description": "Artist or album description"
+            },
+            "image": {
+              "type": "string",
+              "description": "Album cover URL"
+            }
+          }
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/spotify.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/store/apps",
+      "method": "GET",
+      "description": "Retrieve the list of store applications, including their metadata such as name, icon, type, and data like URLs, for display in the store app listing and details pages.",
+      "authRequired": false,
+      "payload": {},
+      "queryParams": {
+        "customstore": {
+          "type": "string",
+          "required": false,
+          "description": "Optional URL of a custom store JSON to override the default app list."
+        }
+      },
+      "response": {
+        "apps": {
+          "type": "array",
+          "description": "Array of apps in the store",
+          "items": {
+            "name": {
+              "type": "string",
+              "description": "App name"
+            },
+            "icon": {
+              "type": "string",
+              "description": "Icon URL or path"
+            },
+            "type": {
+              "type": "string",
+              "description": "Category type such as 'app', 'game', or 'movie'"
+            },
+            "data": {
+              "type": "object",
+              "description": "App-specific data such as iframe URL, description, features, gallery images",
+              "fields": {
+                "url": {
+                  "type": "string",
+                  "description": "Main URL for the app iframe or web content"
+                },
+                "desc": {
+                  "type": "string",
+                  "description": "App description text"
+                },
+                "feat": {
+                  "type": "string",
+                  "description": "App features description text"
+                },
+                "gallery": {
+                  "type": "array",
+                  "description": "Array of image URLs for app screenshots or gallery"
+                }
+              }
+            }
+          }
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/store.jsx"
+      ]
+    },
+    {
+      "endpointName": "/api/apps/install",
+      "method": "POST",
+      "description": "Install an application from the store by providing its metadata and data such as iframe URL. This endpoint triggers installation and configuration of the app into the user's system.",
+      "authRequired": true,
+      "payload": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "The name of the app to install"
+        },
+        "icon": {
+          "type": "string",
+          "required": true,
+          "description": "URL or path to the icon representing the app"
+        },
+        "type": {
+          "type": "string",
+          "required": true,
+          "description": "Type of the app (e.g., game, utility, iframe)"
+        },
+        "data": {
+          "type": "object",
+          "required": true,
+          "description": "App-specific data such as iframe url and configurations",
+          "fields": {
+            "type": {
+              "type": "string",
+              "required": true,
+              "description": "Sub-type of embedded content, e.g., 'IFrame'"
+            },
+            "url": {
+              "type": "string",
+              "required": true,
+              "description": "URL to be loaded in iframe"
+            },
+            "invert": {
+              "type": "boolean",
+              "required": false,
+              "description": "Optional flag for display preferences"
+            }
+          }
+        }
+      },
+      "queryParams": {},
+      "response": {
+        "success": {
+          "type": "boolean",
+          "description": "Indicates whether the app was successfully installed"
+        },
+        "appId": {
+          "type": "string",
+          "description": "Unique identifier assigned to the installed app"
+        }
+      },
+      "databaseRequired": true,
+      "fileUpload": false,
+      "usedInFiles": [
+        "src/containers/applications/apps/store.jsx"
+      ]
+    }
+  ]
+}

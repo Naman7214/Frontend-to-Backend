@@ -79,28 +79,40 @@ class CloneHelper:
         """
         # Ensure the base projects directory exists
         os.makedirs(self.projects_dir, exist_ok=True)
+        print(f"Projects directory: {self.projects_dir}")
         
         # Create the specific project directory
         project_path = os.path.join(self.projects_dir, project_uuid)
         os.makedirs(project_path, exist_ok=True)
-        
+        print(f"Project path: {project_path}")
         return project_path
     
-    async def clone_repository(self, github_url: str, destination_path: str) -> dict:
+    async def clone_repository(self, github_url: str, project_dir: str) -> dict:
         """
-        Clone a GitHub repository to the specified path asynchronously.
+        Clone a GitHub repository to the project directory path asynchronously.
+        Creates a subdirectory with the repository name.
         
         Args:
             github_url (str): The GitHub URL to clone
-            destination_path (str): Path where to clone the repository
+            project_dir (str): Base project directory (Projects/uuid/)
             
         Returns:
             dict: Information about the cloned repository
         """
         try:
+            # Get repo name from URL to create the subdirectory
+            repo_name = self.get_repo_name_from_url(github_url)
+            
+            # Create the full destination path: Projects/uuid/repo_name
+            destination_path = os.path.join(project_dir, repo_name)
+            
+            # Make destination_path absolute to avoid path issues
+            abs_destination_path = os.path.abspath(destination_path)
+            abs_project_dir = os.path.abspath(project_dir)
+            
             # Run git clone command asynchronously
             process = await asyncio.create_subprocess_exec(
-                "git", "clone", github_url, destination_path,
+                "git", "clone", github_url, abs_destination_path,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
@@ -122,13 +134,16 @@ class CloneHelper:
                     detail=error_message
                 )
             
-            # Get repo name
-            repo_name = self.get_repo_name_from_url(github_url)
+            # Verify the directory exists after cloning
+            if not os.path.exists(abs_destination_path):
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Repository directory was not created at {abs_destination_path}"
+                )
             
             # Get commit count to verify successful clone asynchronously
-            os.chdir(destination_path)
             commit_count_process = await asyncio.create_subprocess_exec(
-                "git", "rev-list", "--count", "HEAD",
+                "git", "-C", abs_destination_path, "rev-list", "--count", "HEAD",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
@@ -139,7 +154,8 @@ class CloneHelper:
             return {
                 "success": True,
                 "repo_name": repo_name,
-                "repo_path": destination_path,
+                "repo_path": abs_destination_path,  # Path to cloned repo (Projects/uuid/repo_name)
+                "project_dir": abs_project_dir,     # Path to project dir (Projects/uuid/)
                 "commit_count": commit_count,
                 "message": "Repository cloned successfully."
             }
