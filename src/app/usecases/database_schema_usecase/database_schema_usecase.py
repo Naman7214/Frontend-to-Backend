@@ -35,32 +35,32 @@ class DatabaseSchemaUseCase:
                 # Analyze the endpoint to identify the schema
                 schema_analysis = await self.helper.analyze_endpoint_schema(endpoint)
                 
-                # Update endpoint data with schema analysis
-                endpoint['schema_analysis'] = schema_analysis
+                 # Create a copy of schema_analysis without samples for storing in the endpoint
+                schema_analysis_for_json = {key: value for key, value in schema_analysis.items() if key != 'samples'}
+                
+                # Update endpoint data with cleaned schema analysis (without samples)
+                endpoint['database_schema'] = schema_analysis_for_json
                 
                 # If schema analysis was successful, generate and insert mock data
+                # (Use the original schema_analysis with samples for this)
                 if schema_analysis and not schema_analysis.get("error"):
                     collection_name = schema_analysis.get("collection_name", "unknown_collection")
                     
-                    # Generate mock data
-                    # Assuming generate_mock_data returns a list of records under a 'data' key
+                    # Generate mock data using the original schema_analysis with samples
                     mock_data_response = await self.helper.generate_mock_data(schema_analysis, num_records=10)
                     mock_data_list = mock_data_response.get("data", [])
 
                     if mock_data_list:
                         # Insert mock data into MongoDB, passing repo_path
                         insertion_success = self.helper.insert_to_mongodb(repo_path, collection_name, mock_data_list)
-                        endpoint['mock_data_inserted'] = insertion_success
                         if insertion_success:
                              print(f"Mock data inserted for {collection_name}") # Replaced logging
                         else:
                             print(f"Mock data insertion failed for {collection_name}") # Replaced logging
                     else:
                         print(f"No mock data generated for {collection_name}") # Replaced logging
-                        endpoint['mock_data_inserted'] = False
                 else:
                     print(f"Skipping mock data generation for endpoint {endpoint.get('endpointName')} due to schema analysis error or empty result.") # Replaced logging
-                    endpoint['mock_data_inserted'] = False
                 processed_endpoints.append(endpoint)
             
             endpoints_data['endpoints'] = processed_endpoints
