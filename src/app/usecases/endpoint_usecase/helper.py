@@ -3,6 +3,8 @@ import os
 import re
 import glob
 import json
+import asyncio
+import aiofiles
 from fastapi import Depends
 from src.app.services.openai_service import OpenAIService
 from src.app.prompts.endpoint_prompt import ENDPOINT_PROMPT_SYSTEM_PROMPT
@@ -12,9 +14,9 @@ class EndpointHelper:
         self.openai_service = openai_service
         self.system_prompt = ENDPOINT_PROMPT_SYSTEM_PROMPT
 
-    def find_files_with_grep(self, root_dir, patterns, file_extensions=None):
+    async def find_files_with_grep(self, root_dir, patterns, file_extensions=None):
         """
-        Find files containing specific patterns using grep-like search.
+        Find files containing specific patterns using grep-like search (async version).
         Returns list of matching file paths.
         """
         matching_files = set()
@@ -23,19 +25,26 @@ class EndpointHelper:
         for pattern in patterns:
             try:
                 try:
+                    # Use async subprocess for grep operation
                     ext_pattern = ' -o '.join([f"-name '*{ext}'" for ext in extensions])
                     cmd = f"find {root_dir} -type f \\( {ext_pattern} \\) -exec grep -l '{pattern}' {{}} \\;"
-                    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-                    if result.stdout:
-                        files = result.stdout.strip().split('\n')
+                    process = await asyncio.create_subprocess_shell(
+                        cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE
+                    )
+                    stdout, stderr = await process.communicate()
+                    
+                    if stdout:
+                        files = stdout.decode().strip().split('\n')
                         matching_files.update([f for f in files if f])
                 except Exception as e:
-                    # Fallback to Python-based search
+                    # Fallback to Python-based search (async version)
                     for ext in extensions:
                         for file_path in glob.glob(os.path.join(root_dir, '**', f'*{ext}'), recursive=True):
                             try:
-                                with open(file_path, 'r', encoding='utf-8') as f:
-                                    content = f.read()
+                                async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
+                                    content = await f.read()
                                     if re.search(pattern, content):
                                         matching_files.add(file_path)
                             except:
@@ -46,8 +55,8 @@ class EndpointHelper:
         
         return list(matching_files)
 
-    def find_react_files(self, root_dir, all_files=False, api_files=False, react_hooks=False, auth_files=False):
-        """Find React files in the codebase based on specified criteria."""
+    async def find_react_files(self, root_dir, all_files=False, api_files=False, react_hooks=False, auth_files=False):
+        """Find React files in the codebase based on specified criteria (async version)."""
         result_files = []
         
         # Define patterns for file discovery
@@ -88,7 +97,7 @@ class EndpointHelper:
                 os.path.join(root_dir, "**", "index.ts")   # Include TS index files
             ])
         
-        # Collect files from all patterns
+        # Collect files from all patterns (this is synchronous but fast)
         for pattern in patterns:
             result_files.extend(glob.glob(pattern, recursive=True))
         
@@ -100,7 +109,8 @@ class EndpointHelper:
             'useMutation',
             'useState'
         ]
-        api_files = self.find_files_with_grep(root_dir, api_fetch_patterns)
+        # Call the async method with await
+        api_files = await self.find_files_with_grep(root_dir, api_fetch_patterns)
         result_files.extend(api_files)
         
         # Add files containing React hooks for data fetching if explicitly requested
@@ -114,13 +124,15 @@ class EndpointHelper:
                 'useHttp', 
                 'useRequest'
             ]
-            hook_files = self.find_files_with_grep(root_dir, hook_patterns)
+            # Call the async method with await
+            hook_files = await self.find_files_with_grep(root_dir, hook_patterns)
             result_files.extend(hook_files)
         
         # Add files with auth-related keywords if explicitly requested
         if auth_files:
             auth_patterns = ['auth', 'login', 'logout', 'signin', 'signup', 'token', 'jwt', 'password']
-            auth_files = self.find_files_with_grep(root_dir, auth_patterns)
+            # Call the async method with await
+            auth_files = await self.find_files_with_grep(root_dir, auth_patterns)
             result_files.extend(auth_files)
         
         # Remove duplicates while preserving order
@@ -133,11 +145,11 @@ class EndpointHelper:
         
         return unique_files
 
-    def read_file(self, file_path):
-        """Read a file's contents as text."""
+    async def read_file(self, file_path):
+        """Read a file's contents as text (async version)."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                return f.read()
+            async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
+                return await f.read()
         except Exception as e:
             print(f"Error reading {file_path}: {e}")
             return f"[ERROR: Could not read file: {str(e)}]"
@@ -296,26 +308,34 @@ class EndpointHelper:
         file_type_desc = []
         
         if api_files:
-            react_files.extend(self.find_react_files(root_dir, api_files=True))
+            # Call async version with await
+            api_result = await self.find_react_files(root_dir, api_files=True)
+            react_files.extend(api_result)
             file_type_desc.append("API-related files")
         elif all_files:
-            react_files.extend(self.find_react_files(root_dir, all_files=True))
+            # Call async version with await
+            all_result = await self.find_react_files(root_dir, all_files=True)
+            react_files.extend(all_result)
             file_type_desc.append("React files")
         else:
             # Default: find index files + basic API pattern searches
-            react_files.extend(self.find_react_files(root_dir))
+            # Call async version with await
+            default_result = await self.find_react_files(root_dir)
+            react_files.extend(default_result)
             file_type_desc.append("index files and API pattern matches")
         
         # Add files with data fetching hooks if requested
         if react_hooks:
-            hook_files = self.find_react_files(root_dir, react_hooks=True)
+            # Call async version with await
+            hook_files = await self.find_react_files(root_dir, react_hooks=True)
             react_files.extend(hook_files)
             file_type_desc.append("hook-using files")
         
         # Add auth-related files if requested
         if auth_files:
-            auth_files = self.find_react_files(root_dir, auth_files=True)
-            react_files.extend(auth_files)
+            # Call async version with await
+            auth_result = await self.find_react_files(root_dir, auth_files=True)
+            react_files.extend(auth_result)
             file_type_desc.append("auth-related files")
         
         # Remove duplicates
@@ -333,30 +353,45 @@ class EndpointHelper:
         # Process each file with progressive endpoint accumulation
         all_endpoints = []
         
-        for i, file_path in enumerate(react_files, 1):
+        # Process files concurrently in batches for better performance
+        batch_size = 5  # Process 5 files concurrently
+        for i in range(0, len(react_files), batch_size):
+            batch = react_files[i:i+batch_size]
+            batch_tasks = []
+            
+            # Create tasks for each file in the batch
+            for file_path in batch:
+                # Read file content asynchronously
+                content = await self.read_file(file_path)
+                
+                # Skip empty or unreadable files
+                if not content or content.startswith("[ERROR"):
+                    continue
+                
+                # Create task for endpoint analysis
+                task = self.analyze_file_for_endpoints(
+                    file_path,
+                    content,
+                    root_dir,
+                    verbose=verbose,
+                    existing_endpoints=all_endpoints
+                )
+                batch_tasks.append(task)
+            
+            # Wait for all tasks in this batch to complete
+            batch_results = await asyncio.gather(*batch_tasks)
+            
+            # Update endpoints with results from this batch
+            for endpoints in batch_results:
+                if endpoints and verbose:
+                    print(f"  Found {len(endpoints)} endpoints")
+                
+                # Update the accumulated endpoints list with new endpoints
+                all_endpoints = self.update_endpoints_list(all_endpoints, endpoints)
+            
+            # Show progress
             if not verbose:
-                print(f"Processing file {i}/{len(react_files)}: {self.get_relative_path(file_path, root_dir)}", end="\r")
-            
-            content = self.read_file(file_path)
-            
-            # Skip empty or unreadable files
-            if not content or content.startswith("[ERROR"):
-                continue
-                
-            # Pass the current list of endpoints for context
-            endpoints = await self.analyze_file_for_endpoints(
-                file_path, 
-                content, 
-                root_dir, 
-                verbose=verbose, 
-                existing_endpoints=all_endpoints
-            )
-            
-            if endpoints and verbose:
-                print(f"  Found {len(endpoints)} endpoints")
-                
-            # Update the accumulated endpoints list with new endpoints
-            all_endpoints = self.update_endpoints_list(all_endpoints, endpoints)
+                print(f"Processing files: {min(i+batch_size, len(react_files))}/{len(react_files)}", end="\r")
         
         # Prepare final output
         result = {
