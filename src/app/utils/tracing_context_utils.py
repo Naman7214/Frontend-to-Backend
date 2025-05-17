@@ -10,3 +10,6 @@ request_context: ContextVar[Request] = ContextVar(
 tracer_context: ContextVar[StatefulTraceClient] = ContextVar(
     "tracer_context", default=None
 )
+user_query_context: ContextVar[str] = ContextVar(
+    "user_query_context", default=None
+)
