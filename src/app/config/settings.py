@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # OpenAI settings
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
     OPENAI_COMPLETION_ENDPOINT: str = "/chat/completions"
-    OPENAI_MODEL: str = "gpt-4.1-mini"
+    OPENAI_MODEL: str = "gpt-4.1-mini-2025-04-14"
     OPENAI_API_KEY: str
 
     # Anthropic settings
@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     LANGFUSE_PUBLIC_KEY: str
     LANGFUSE_SECRET_KEY: str
     LANGFUSE_HOST: str = "http://localhost:3000"
+    
+    MOCK_DATA_API_URL: str = "http://192.168.17.189:8000/generate-mock-data?count=10"
 
     class Config:
         env_file = ".env"

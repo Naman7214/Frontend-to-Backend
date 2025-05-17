@@ -10,3 +10,4 @@ intermediate_outputs/
 struct_logs/
 linters.sh
 Projects/
+venv/

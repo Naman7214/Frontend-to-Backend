@@ -5,7 +5,7 @@ from src.app.usecases.clone_usecase.clone_usecase import CloneUseCase
 from src.app.usecases.endpoint_usecase.endpoint_usecase import EndpointUseCase
 import json
 from src.app.usecases.set_priority_usecase import SetPriorityUseCase
-
+from src.app.usecases.database_schema_usecase.database_schema_usecase import DatabaseSchemaUseCase
 
 class BackendCodeGenController:
     """
