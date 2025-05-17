@@ -57,4 +57,4 @@ class EndpointUseCase:
             # Add the output path to the result
             result["output_path"] = output_path
                 
-        return result
+        return output_path
