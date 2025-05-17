@@ -60,7 +60,6 @@ class MongoDB:
                 detail=f"Unable to access auth collection: {str(e)} \n error while connecting to MongoDB client (from database.py in get_llm_usage_collection())",
             )
 
-
     def disconnect(self):
         try:
             if self.mongodb_client:

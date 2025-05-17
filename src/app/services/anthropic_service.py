@@ -1,4 +1,3 @@
-import json
 import time
 from datetime import datetime
 
@@ -9,11 +8,7 @@ from src.app.models.domain.error import Error
 from src.app.repositories.error_repository import ErrorRepo
 from src.app.repositories.llm_usage_repository import LLMUsageRepository
 from src.app.services.api_service import ApiService
-from src.app.services.llm_tracing_service import (
-    llm_streaming_tracing,
-    llm_tracing,
-)
-from src.app.utils.logging_utils import loggers
+from src.app.services.llm_tracing_service import llm_tracing
 
 
 class AnthropicService:

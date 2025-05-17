@@ -32,7 +32,6 @@ class Settings(BaseSettings):
     LANGFUSE_SECRET_KEY: str
     LANGFUSE_HOST: str = "http://localhost:3000"
 
-
     class Config:
         env_file = ".env"
 

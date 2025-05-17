@@ -1,8 +1,8 @@
 from typing import Any, Dict, Optional
 
 from fastapi import Depends
-from langfuse import Langfuse
 
+from langfuse import Langfuse
 from src.app.config.settings import settings
 from src.app.repositories.error_repository import ErrorRepo
 from src.app.utils.logging_utils import loggers
@@ -21,7 +21,7 @@ class LangfuseService:
             host=settings.LANGFUSE_HOST,
             release=settings.APP_VERSION,
         )
-    
+
     # Add a trace validation helper method
     def is_valid_trace_id(self, trace_id: str) -> bool:
         """Validates if a trace ID should be used for creating traces"""
@@ -32,9 +32,11 @@ class LangfuseService:
     ) -> Optional[str]:
         # Skip if invalid trace ID
         if not self.is_valid_trace_id(trace_id):
-            loggers["lfuse"].info(f"Skipping trace creation - invalid trace ID: {trace_id}")
+            loggers["lfuse"].info(
+                f"Skipping trace creation - invalid trace ID: {trace_id}"
+            )
             return None
-        
+
         loggers["lfuse"].info(
             f"entering create_generation with trace_id: {trace_id}"
         )

@@ -469,9 +469,12 @@ def llm_tracing(provider: str):
             trace_id = id  # str(uuid.uuid4())
 
             if not trace_id or trace_id == "None" or trace_id == "":
-                loggers["lfuse"].info(f"Skipping tracing - invalid trace ID: {trace_id}")
-                return await func(self, system_prompt, user_prompt, model_name, **params)
-            
+                loggers["lfuse"].info(
+                    f"Skipping tracing - invalid trace ID: {trace_id}"
+                )
+                return await func(
+                    self, system_prompt, user_prompt, model_name, **params
+                )
 
             # Get provider config
             provider_config = PROVIDER_CONFIGS.get(provider, {})
