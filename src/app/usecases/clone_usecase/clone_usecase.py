@@ -28,7 +28,6 @@ class CloneUseCase:
         # Clone the repository
         clone_result = self.clone_helper.clone_repository(github_url, project_path)
         
-        # Add the UUID to the result
-        clone_result["project_uuid"] = project_uuid
+        repo_path = clone_result["repo_path"]
         
-        return clone_result
+        return repo_path, project_uuid
