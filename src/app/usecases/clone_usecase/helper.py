@@ -1,6 +1,7 @@
 import os
 import re
 import uuid
+import asyncio
 import subprocess
 from pathlib import Path
 from fastapi import HTTPException
@@ -85,9 +86,9 @@ class CloneHelper:
         
         return project_path
     
-    def clone_repository(self, github_url: str, destination_path: str) -> dict:
+    async def clone_repository(self, github_url: str, destination_path: str) -> dict:
         """
-        Clone a GitHub repository to the specified path.
+        Clone a GitHub repository to the specified path asynchronously.
         
         Args:
             github_url (str): The GitHub URL to clone
@@ -97,25 +98,43 @@ class CloneHelper:
             dict: Information about the cloned repository
         """
         try:
-            # Run git clone command
-            process = subprocess.run(
-                ["git", "clone", github_url, destination_path],
-                capture_output=True,
-                text=True,
-                check=True
+            # Run git clone command asynchronously
+            process = await asyncio.create_subprocess_exec(
+                "git", "clone", github_url, destination_path,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
             )
+            
+            stdout, stderr = await process.communicate()
+            
+            if process.returncode != 0:
+                stderr_text = stderr.decode()
+                # Check if the error is because the repository is private or doesn't exist
+                if "Authentication failed" in stderr_text or "could not read Username" in stderr_text:
+                    error_message = "Private repository or authentication required. Please provide credentials."
+                elif "repository not found" in stderr_text:
+                    error_message = "Repository not found. Please check the URL."
+                else:
+                    error_message = f"Git clone failed: {stderr_text}"
+                    
+                raise HTTPException(
+                    status_code=400,
+                    detail=error_message
+                )
             
             # Get repo name
             repo_name = self.get_repo_name_from_url(github_url)
             
-            # Get commit count to verify successful clone
+            # Get commit count to verify successful clone asynchronously
             os.chdir(destination_path)
-            commit_count_process = subprocess.run(
-                ["git", "rev-list", "--count", "HEAD"],
-                capture_output=True,
-                text=True
+            commit_count_process = await asyncio.create_subprocess_exec(
+                "git", "rev-list", "--count", "HEAD",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
             )
-            commit_count = int(commit_count_process.stdout.strip()) if commit_count_process.returncode == 0 else 0
+            
+            stdout, stderr = await commit_count_process.communicate()
+            commit_count = int(stdout.decode().strip()) if commit_count_process.returncode == 0 else 0
             
             return {
                 "success": True,
@@ -125,19 +144,9 @@ class CloneHelper:
                 "message": "Repository cloned successfully."
             }
             
-        except subprocess.CalledProcessError as e:
-            # Check if the error is because the repository is private or doesn't exist
-            if "Authentication failed" in e.stderr or "could not read Username" in e.stderr:
-                error_message = "Private repository or authentication required. Please provide credentials."
-            elif "repository not found" in e.stderr:
-                error_message = "Repository not found. Please check the URL."
-            else:
-                error_message = f"Git clone failed: {e.stderr}"
-                
-            raise HTTPException(
-                status_code=400,
-                detail=error_message
-            )
+        except HTTPException as e:
+            # Re-raise HTTP exceptions
+            raise
             
         except Exception as e:
             raise HTTPException(
