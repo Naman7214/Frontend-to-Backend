@@ -69,41 +69,77 @@
 }
 
 header {
-  margin-bottom: 3rem;
-  padding-top: 2rem;
+  padding: 24px 0;
 }
 
 .logo-section {
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .logo {
   display: flex;
   align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.icon-container {
+  background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
   justify-content: center;
-  margin-bottom: 0.5rem;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(58, 123, 213, 0.3);
+  transform: rotate(-10deg);
+  transition: transform 0.3s ease;
+}
+
+.logo:hover .icon-container {
+  transform: rotate(0deg) scale(1.05);
 }
 
 .rocket-icon {
-  font-size: 2.5rem;
-  color: var(--accent-primary);
-  margin-right: 0.75rem;
+  color: white;
+  font-size: 24px;
 }
 
-h1 {
-  font-size: 3.5rem;
+.text-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo h1 {
+  font-size: 32px;
   font-weight: 700;
   margin: 0;
-  color: var(--text-primary);
-  letter-spacing: -1px;
+  background: linear-gradient(90deg, #3a7bd5, #00d2ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
 }
 
 .tagline {
-  color: var(--text-secondary);
-  font-size: 1.2rem;
-  font-weight: 500;
-  margin-top: 0.5rem;
+  font-size: 14px;
+  margin: 0;
+  color: var(--text-color-secondary);
   letter-spacing: 1px;
+  text-transform: lowercase;
+  font-style: italic;
+  margin-top: -4px;
+  margin-left: 2px;
+}
+
+[data-theme="light"] .icon-container {
+  box-shadow: 0 4px 12px rgba(58, 123, 213, 0.2);
+}
+
+[data-theme="dark"] .icon-container {
+  box-shadow: 0 4px 12px rgba(58, 123, 213, 0.15);
 }
 
 main {
@@ -365,24 +401,38 @@ footer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  padding: 30px 0;
+  color: var(--text-color-secondary);
+}
+
+.footer-content p {
+  margin: 4px 0 0 0;
+  font-size: 14px;
 }
 
 .footer-logo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-    font-weight: 600;
-  color: var(--accent-primary);
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
-.rocket-icon-small {
-  font-size: 1.2rem;
+.icon-container-small {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 18px;
 }
 
-footer p {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
+.footer-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(90deg, #3a7bd5, #00d2ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
 }
 
 /* Download button styles */

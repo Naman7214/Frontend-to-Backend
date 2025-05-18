@@ -8,13 +8,13 @@ function App() {
   const [endpoints, setEndpoints] = useState([])
   const [projectData, setProjectData] = useState(null)
   const [processingSteps, setProcessingSteps] = useState([
-    { id: 'clone', label: 'Clone repository', completed: false, active: false },
+    { id: 'clone', label: 'Cloning repository', completed: false, active: false },
     { id: 'extract', label: 'Extracting API endpoints', completed: false, active: false },
-    { id: 'schema', label: 'Generate database schema', completed: false, active: false },
-    { id: 'priority', label: 'Prioritize endpoints', completed: false, active: false },
-    { id: 'generate', label: 'Generate backend code (AI)', completed: false, active: false },
-    { id: 'postman', label: 'Create Postman collection', completed: false, active: false },
-    { id: 'construct', label: 'Construct final codebase', completed: false, active: false }
+    { id: 'schema', label: 'Generating database schema', completed: false, active: false },
+    { id: 'priority', label: 'Prioritizing endpoints', completed: false, active: false },
+    { id: 'generate', label: 'Generating backend code (AI)', completed: false, active: false },
+    { id: 'postman', label: 'Creating Postman collection', completed: false, active: false },
+    { id: 'construct', label: 'Constructing Final codebase', completed: false, active: false }
   ])
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('theme') || 'dark'
@@ -307,10 +307,14 @@ function App() {
       <header>
         <div className="logo-section">
           <div className="logo">
-            <FaRocket className="rocket-icon" />
-            <h1>Engine</h1>
+            <div className="icon-container">
+              <FaRocket className="rocket-icon" />
+            </div>
+            <div className="text-container">
+              <h1>Engine</h1>
+              <p className="tagline">powering rocket</p>
+            </div>
           </div>
-          <p className="tagline">powering rocket</p>
         </div>
       </header>
 
@@ -453,8 +457,13 @@ function App() {
       <footer>
         <div className="footer-content">
           <div className="footer-logo">
-            <FaRocket className="rocket-icon-small" />
-            <span>engine</span>
+            <div className="icon-container icon-container-small">
+              <FaRocket className="rocket-icon" />
+            </div>
+            <div className="text-container">
+              <h3 className="footer-title">Engine</h3>
+              <p className="tagline">powering rocket</p>
+            </div>
           </div>
           <p>© 2025 Engine - All rights reserved</p>
         </div>
