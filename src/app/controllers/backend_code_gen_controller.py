@@ -5,7 +5,7 @@ from datetime import datetime
 from fastapi import Depends, Request
 from src.app.usecases.clone_usecase.clone_usecase import CloneUseCase
 from src.app.usecases.endpoint_usecase.endpoint_usecase import EndpointUseCase
-from src.app.usecases.set_priority_usecase import SetPriorityUseCase
+from app.usecases.set_priority_usecase.set_priority_usecase import SetPriorityUseCase
 from src.app.usecases.database_schema_usecase.database_schema_usecase import DatabaseSchemaUseCase
 from src.app.usecases.postman_collection_usecase.postman_collection_usecase import PostmanCollectionUseCase
 from src.app.usecases.code_generation_usecase.code_generation_usecase import CodeGenerationUseCase
