@@ -36,12 +36,12 @@ async def backend_code_gen(
 async def stream_workflow(
     request: Request,
     query: QueryRequest,
-    build_workflow_controller: BackendCodeGenController = Depends(
+    backend_code_gen_controller: BackendCodeGenController = Depends(
         BackendCodeGenController
     ),
 ):
     """Stream workflow generation process to the client."""
     return StreamingResponse(
-        build_workflow_controller.format_streaming_events(query.url, request),
+        backend_code_gen_controller.format_streaming_events(query.url, request),
         media_type="text/event-stream",
     )
