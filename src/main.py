@@ -6,6 +6,9 @@ from src.app.config.database import mongodb_database
 from src.app.routes.backend_code_gen_route import (
     router as backend_code_gen_router,
 )
+from src.app.routes.fetch_zip_route import (
+    router as fetch_zip_router,
+)
 from src.app.services.langfuse_service import langfuse_service
 from src.app.utils.logging_utils import loggers
 from src.app.utils.tracing_context_utils import (
@@ -137,3 +140,4 @@ async def root():
 
 # Include routers
 app.include_router(backend_code_gen_router, tags=["Backend Code Generator"])
+app.include_router(fetch_zip_router, tags=["File Operations"])
