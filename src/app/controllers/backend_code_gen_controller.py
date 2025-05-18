@@ -18,12 +18,16 @@ class BackendCodeGenController:
         set_priority_usecase: SetPriorityUseCase = Depends(SetPriorityUseCase),
         clone_usecase: CloneUseCase = Depends(),
         endpoint_usecase: EndpointUseCase = Depends(),
-        db_schema_usecase: DatabaseSchemaUseCase = Depends()
+        db_schema_usecase: DatabaseSchemaUseCase = Depends(),
+        code_generation_usecase: CodeGenerationUseCase = Depends(CodeGenerationUseCase),
+
+
     ):
         self.clone_usecase = clone_usecase
         self.endpoint_usecase = endpoint_usecase
         self.set_priority_usecase = set_priority_usecase
         self.db_schema_usecase = db_schema_usecase
+        self.code_generation_usecase = code_generation_usecase
 
 
     async def code_gen(self, url: str):
@@ -41,5 +45,12 @@ class BackendCodeGenController:
 
         priority_result = await self.set_priority_usecase.set_priority(json_file_path=f"Projects/{project_uuid}/endpoints.json")
 
-        return f"Code generation logic for URL: {url}"
+        input_path = f"Projects/{project_uuid}/sorted_endpoints.json"
+        repo_name = os.path.basename(repo_path.rstrip('/'))
+        final_code_path = await self.code_generation_usecase.execute(
+            input_path=input_path,
+            project_name=repo_name
+        )
+        
+        return final_code_path
         # return await self.usecase.execute()
