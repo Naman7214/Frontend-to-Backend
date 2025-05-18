@@ -1,18 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
-import { FaCode, FaDownload, FaGithub, FaMoon, FaRocket, FaSun } from 'react-icons/fa'
+import { FaCheckCircle, FaCode, FaDownload, FaExclamationTriangle, FaGithub, FaMoon, FaRocket, FaServer, FaSpinner, FaSun } from 'react-icons/fa'
 import './App.css'
 
 function App() {
   const [repoUrl, setRepoUrl] = useState('')
   const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState('')
   const [endpoints, setEndpoints] = useState([])
   const [projectData, setProjectData] = useState(null)
+  const [processingSteps, setProcessingSteps] = useState([
+    { id: 'clone', label: 'Clone repository', completed: false, active: false },
+    { id: 'extract', label: 'Extract API endpoints', completed: false, active: false },
+    { id: 'schema', label: 'Generate database schema', completed: false, active: false },
+    { id: 'priority', label: 'Prioritize endpoints', completed: false, active: false },
+    { id: 'generate', label: 'Generate backend code (AI)', completed: false, active: false },
+    { id: 'postman', label: 'Create Postman collection', completed: false, active: false },
+    { id: 'construct', label: 'Construct final codebase', completed: false, active: false }
+  ])
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('theme') || 'dark'
   })
   const eventSourceRef = useRef(null)
   const API_BASE_URL = 'http://localhost:8000'
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -28,6 +37,63 @@ function App() {
     }
   }, [])
 
+  const updateProcessingStep = (status) => {
+    if (!status) return
+
+    setProcessingSteps(prevSteps => {
+      const updatedSteps = [...prevSteps]
+
+      // Match status to steps and update accordingly
+      if (status.includes('Starting code generation')) {
+        updateStep(updatedSteps, 'clone', 'active')
+      } else if (status.includes('Cloning repository')) {
+        updateStep(updatedSteps, 'clone', 'active')
+      } else if (status.includes('cloned successfully')) {
+        updateStep(updatedSteps, 'clone', 'completed')
+        updateStep(updatedSteps, 'extract', 'active')
+      } else if (status.includes('Extracting API endpoints')) {
+        updateStep(updatedSteps, 'extract', 'active')
+      } else if (status.includes('endpoints extracted successfully')) {
+        updateStep(updatedSteps, 'extract', 'completed')
+        updateStep(updatedSteps, 'schema', 'active')
+      } else if (status.includes('schema and setting priorities')) {
+        updateStep(updatedSteps, 'schema', 'active')
+        updateStep(updatedSteps, 'priority', 'active')
+      } else if (status.includes('Database schema generated successfully')) {
+        updateStep(updatedSteps, 'schema', 'completed')
+      } else if (status.includes('endpoints prioritized successfully')) {
+        updateStep(updatedSteps, 'priority', 'completed')
+        updateStep(updatedSteps, 'generate', 'active')
+      } else if (status.includes('Generating backend code')) {
+        updateStep(updatedSteps, 'generate', 'active')
+      } else if (status.includes('Backend code generated successfully')) {
+        updateStep(updatedSteps, 'generate', 'completed')
+        updateStep(updatedSteps, 'postman', 'active')
+      } else if (status.includes('Postman collection generated successfully')) {
+        updateStep(updatedSteps, 'postman', 'completed')
+        updateStep(updatedSteps, 'construct', 'active')
+      } else if (status.includes('API codebase constructed and zipped successfully')) {
+        updateStep(updatedSteps, 'construct', 'completed')
+      }
+
+      return updatedSteps
+    })
+  }
+
+  // Helper function to update a step
+  function updateStep(steps, id, state) {
+    const index = steps.findIndex(step => step.id === id)
+    if (index !== -1) {
+      if (state === 'active') {
+        steps[index].active = true
+        steps[index].completed = false
+      } else if (state === 'completed') {
+        steps[index].active = false
+        steps[index].completed = true
+      }
+    }
+  }
+
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }
@@ -35,10 +101,19 @@ function App() {
   const handleClone = async () => {
     if (!repoUrl || loading) return
 
+    // Clear any previous errors
+    setError(null);
+
     setLoading(true)
-    setStatus('Starting backend generation...')
     setEndpoints([])
     setProjectData(null)
+
+    // Reset all processing steps
+    setProcessingSteps(processingSteps.map(step => ({
+      ...step,
+      completed: false,
+      active: false
+    })))
 
     // Close any existing EventSource
     if (eventSourceRef.current) {
@@ -46,7 +121,7 @@ function App() {
     }
 
     try {
-      // First make the initial POST request to start the process
+      // Make the POST request to start the process and handle all events using fetch streaming
       const response = await fetch(`${API_BASE_URL}/stream-code-gen`, {
         method: 'POST',
         headers: {
@@ -59,78 +134,106 @@ function App() {
         throw new Error('Failed to start code generation')
       }
 
-      // Now connect to SSE stream
-      const eventSource = new EventSource(`${API_BASE_URL}/stream-code-gen`)
-      eventSourceRef.current = eventSource
+      // Get a reader from the response body stream
+      const reader = response.body.getReader()
+      let decoder = new TextDecoder()
+      let buffer = ''
 
-      // Listen for different event types
-      eventSource.addEventListener('status', (event) => {
+      // Create a custom event handler to process the SSE stream manually
+      const processStream = async () => {
         try {
-          const data = JSON.parse(event.data)
-          setStatus(data.status)
-        } catch (error) {
-          console.error('Error parsing status event:', error)
-        }
-      })
+          while (true) {
+            const { done, value } = await reader.read()
 
-      eventSource.addEventListener('endpoints', (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          if (Array.isArray(data.endpoints)) {
-            const formattedEndpoints = data.endpoints.map(endpoint => ({
-              method: endpoint.method || 'GET',
-              path: endpoint.path || '',
-              description: endpoint.description || endpoint.summary || ''
-            }))
-            setEndpoints(formattedEndpoints)
+            if (done) {
+              console.log('Stream complete')
+              setLoading(false)
+              break
+            }
+
+            // Convert the chunk to text and add to buffer
+            const chunk = decoder.decode(value, { stream: true })
+            buffer += chunk
+
+            // Process any complete events in the buffer
+            const events = buffer.split('\n\n')
+            buffer = events.pop() || '' // Keep the last incomplete chunk in the buffer
+
+            for (const eventData of events) {
+              if (!eventData.trim()) continue
+
+              // Parse the event type and data
+              const eventLines = eventData.split('\n')
+              let eventType = ''
+              let eventContent = ''
+
+              for (const line of eventLines) {
+                if (line.startsWith('event: ')) {
+                  eventType = line.substring(7)
+                } else if (line.startsWith('data: ')) {
+                  eventContent = line.substring(6)
+                }
+              }
+
+              if (!eventType || !eventContent) continue
+
+              // Process the event based on its type
+              try {
+                const data = JSON.parse(eventContent)
+
+                switch (eventType) {
+                  case 'status':
+                    // Update the progress steps based on status
+                    updateProcessingStep(data.status)
+                    break
+
+                  case 'endpoints':
+                    if (Array.isArray(data.endpoints)) {
+                      const formattedEndpoints = data.endpoints.map(endpoint => ({
+                        method: endpoint.method || 'GET',
+                        path: endpoint.path || '',
+                        description: endpoint.description || endpoint.summary || ''
+                      }))
+                      setEndpoints(formattedEndpoints)
+                    }
+                    break
+
+                  case 'completed':
+                    if (data.result) {
+                      setProjectData(data.result)
+                    }
+                    setLoading(false)
+                    break
+
+                  case 'error':
+                    setError(data.error || 'An unknown error occurred during code generation')
+                    setLoading(false)
+                    break
+
+                  case 'message_stop':
+                    setLoading(false)
+                    break
+                }
+
+              } catch (error) {
+                console.error(`Error parsing ${eventType} event:`, error)
+                setError(`Error parsing event data: ${error.message}`)
+              }
+            }
           }
         } catch (error) {
-          console.error('Error parsing endpoints event:', error)
-        }
-      })
-
-      eventSource.addEventListener('completed', (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          if (data.result) {
-            setProjectData(data.result)
-          }
-          setLoading(false)
-        } catch (error) {
-          console.error('Error parsing completed event:', error)
-        } finally {
-          eventSource.close()
-        }
-      })
-
-      eventSource.addEventListener('error', (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          setStatus(`Error: ${data.error || 'Unknown error occurred'}`)
-        } catch (error) {
-          console.error('Error parsing error event:', error)
-          setStatus('An error occurred during code generation')
-        } finally {
-          eventSource.close()
+          console.error('Stream processing error:', error)
+          setError(`Stream processing error: ${error.message}`)
           setLoading(false)
         }
-      })
-
-      eventSource.addEventListener('message_stop', () => {
-        eventSource.close()
-        setLoading(false)
-      })
-
-      // Handle general errors
-      eventSource.onerror = (error) => {
-        console.error('EventSource error:', error)
-        setStatus('Error connecting to the server')
-        eventSource.close()
-        setLoading(false)
       }
+
+      // Start processing the stream
+      processStream()
+
     } catch (error) {
       console.error('Error:', error)
-      setStatus(`Error: ${error.message}`)
+      setError(`Failed to start code generation: ${error.message}`)
       setLoading(false)
     }
   }
@@ -146,14 +249,29 @@ function App() {
         throw new Error('Zip file path not found in project data')
       }
 
-      // Make a request to download the file
-      window.location.href = `${API_BASE_URL}/download-zip?path=${encodeURIComponent(zipFilePath)}&filename=${encodeURIComponent(repoName)}`
+      // Show instructions for manual download
+      alert(`
+      Backend code generation complete!
+      
+      To access your files:
+      1. The zip file is available on the server at: ${zipFilePath}
+      2. You can manually retrieve this file from the server
+      
+      Project name: ${repoName}
+    `)
 
     } catch (error) {
       console.error('Download error:', error)
-      setStatus(`Download error: ${error.message}`)
+      alert(`Download error: ${error.message}`)
     }
   }
+
+  // Get percentage of completed steps
+  const completionPercentage = processingSteps.filter(step => step.completed).length / processingSteps.length * 100
+
+  // Find current active step name
+  const currentStep = processingSteps.find(step => step.active)
+  const currentStepName = currentStep ? currentStep.label : 'Initializing...'
 
   return (
     <div className="app-container">
@@ -207,43 +325,90 @@ function App() {
           </button>
         </div>
 
-        {loading && (
-          <div className="progress-container">
-            <div className="progress-bar">
-              <div className="progress-fill"></div>
-            </div>
-          </div>
-        )}
-
-        {status && (
-          <div className="status-container">
-            <h2>Status</h2>
-            <div className="status-box">
-              <p>{status}</p>
-            </div>
-          </div>
-        )}
-
         {endpoints.length > 0 && (
           <div className="endpoints-container">
-            <h2>Generated API Endpoints</h2>
+            <div className="endpoints-header">
+              <FaServer className="endpoints-icon" />
+              <h2>API Endpoints Generated</h2>
+              <div className="endpoints-count">{endpoints.length}</div>
+            </div>
+
             <div className="endpoints-list">
               {endpoints.map((endpoint, index) => (
                 <div key={index} className="endpoint-item">
-                  <span className={`method ${endpoint.method.toLowerCase()}`}>{endpoint.method}</span>
-                  <span className="path">{endpoint.path}</span>
-                  <span className="description">{endpoint.description}</span>
+                  <div className="endpoint-top">
+                    <span className={`method ${endpoint.method.toLowerCase()}`}>{endpoint.method}</span>
+                    <span className="path">{endpoint.path}</span>
+                  </div>
+                  {endpoint.description && (
+                    <div className="endpoint-description">
+                      <p>{endpoint.description}</p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
 
+        {loading && (
+          <div className="generation-progress">
+            <div className="progress-header">
+              <h2>Generation Progress</h2>
+            </div>
+
+            <div className="progress-steps">
+              {processingSteps.map(step => (
+                // Only show steps that are active or completed
+                (step.active || step.completed) && (
+                  <div key={step.id} className={`progress-step ${step.active ? 'active' : ''} ${step.completed ? 'completed' : ''}`}>
+                    {step.completed ? (
+                      <FaCheckCircle className="step-icon completed" />
+                    ) : step.active ? (
+                      <FaSpinner className="step-icon spinning" />
+                    ) : (
+                      <div className="step-icon empty" />
+                    )}
+                    <span className="step-label">{step.label}</span>
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="error-container">
+            <div className="error-header">
+              <FaExclamationTriangle className="error-icon" />
+              <h2>Error Occurred</h2>
+            </div>
+            <div className="error-message">
+              <p>{error}</p>
+            </div>
+          </div>
+        )}
+
         {projectData && (
           <div className="download-container">
-            <button className="download-button" onClick={handleDownload}>
+            <div className="result-info">
+              <div className="success-header">
+                <FaCheckCircle className="success-icon" />
+                <h2>Backend Code Generated!</h2>
+              </div>
+              <div className="result-details">
+                <p><strong>Project:</strong> {projectData.repo_name}</p>
+                <p><strong>Location:</strong> <code>{projectData.zip_path}</code></p>
+                <p className="note">Direct download from browser coming soon!</p>
+              </div>
+            </div>
+            <button
+              className="download-button"
+              onClick={handleDownload}
+              title="Shows information about your generated code"
+            >
               <FaDownload className="button-icon" />
-              <span>Download Generated Code</span>
+              <span>View Code Info</span>
             </button>
           </div>
         )}
@@ -255,7 +420,7 @@ function App() {
             <FaRocket className="rocket-icon-small" />
             <span>engine</span>
           </div>
-          <p>© 2023 Engine - All rights reserved</p>
+          <p>© 2025 Engine - All rights reserved</p>
         </div>
       </footer>
     </div>
