@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { FaCode, FaGithub, FaMoon, FaRocket, FaSun } from 'react-icons/fa'
+import { useEffect, useRef, useState } from 'react'
+import { FaCode, FaDownload, FaGithub, FaMoon, FaRocket, FaSun } from 'react-icons/fa'
 import './App.css'
 
 function App() {
@@ -7,58 +7,138 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState('')
   const [endpoints, setEndpoints] = useState([])
+  const [projectData, setProjectData] = useState(null)
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('theme') || 'dark'
   })
+  const eventSourceRef = useRef(null)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('theme', theme)
   }, [theme])
 
+  // Cleanup EventSource on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+      }
+    }
+  }, [])
+
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
   const handleClone = async () => {
-    if (!repoUrl) return
+    if (!repoUrl || loading) return
 
     setLoading(true)
     setStatus('Starting backend generation...')
+    setEndpoints([])
+    setProjectData(null)
+
+    // Close any existing EventSource
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+    }
 
     try {
-      // Mock response for demo
-      setTimeout(() => {
-        setStatus('Backend generation completed!')
-        setEndpoints([
-          { method: 'GET', path: '/api/users', description: 'Get all users' },
-          { method: 'POST', path: '/api/users', description: 'Create a user' },
-          { method: 'GET', path: '/api/products', description: 'Get all products' }
-        ])
-        setLoading(false)
-      }, 2000)
+      // Connect to the server-sent events endpoint
+      const apiUrl = new URL('http://localhost:8000/stream-code-gen')
 
-      // Uncomment when real API is ready
-      /*
-      const response = await fetch('http://localhost:8000/generate', {
+      const eventSource = new EventSource(`http://localhost:8000/stream-code-gen`)
+      eventSourceRef.current = eventSource
+
+      // Listen for different event types
+      eventSource.addEventListener('status', (event) => {
+        const data = JSON.parse(event.data)
+        setStatus(data.status)
+      })
+
+      eventSource.addEventListener('endpoints', (event) => {
+        const data = JSON.parse(event.data)
+        const formattedEndpoints = data.endpoints.map(endpoint => ({
+          method: endpoint.method || 'GET',
+          path: endpoint.path || '',
+          description: endpoint.description || ''
+        }))
+        setEndpoints(formattedEndpoints)
+      })
+
+      eventSource.addEventListener('completed', (event) => {
+        const data = JSON.parse(event.data)
+        setProjectData(data.result)
+        eventSource.close()
+        setLoading(false)
+      })
+
+      eventSource.addEventListener('error', (event) => {
+        const data = JSON.parse(event.data)
+        setStatus(`Error: ${data.error}`)
+        eventSource.close()
+        setLoading(false)
+      })
+
+      eventSource.addEventListener('message_stop', () => {
+        eventSource.close()
+        setLoading(false)
+      })
+
+      // Handle connection error
+      eventSource.onerror = (error) => {
+        console.error('EventSource error:', error)
+        setStatus('Error connecting to the server')
+        eventSource.close()
+        setLoading(false)
+      }
+
+      // Initialize with a POST request to start the process
+      await fetch('http://localhost:8000/stream-code-gen', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ repo_url: repoUrl }),
+        body: JSON.stringify({ url: repoUrl }),
       })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setStatus(data.status || 'Backend generation completed!')
-        setEndpoints(data.endpoints || [])
-      } else {
-        setStatus('Error generating backend')
-      }
-      */
     } catch (error) {
+      console.error('Error:', error)
       setStatus(`Error: ${error.message}`)
       setLoading(false)
+    }
+  }
+
+  const handleDownload = async () => {
+    if (!projectData) return
+
+    try {
+      const response = await fetch(`http://localhost:8000/download-code?project_uuid=${projectData.project_uuid}`)
+
+      if (!response.ok) {
+        throw new Error('Failed to download generated code')
+      }
+
+      // Get the blob from the response
+      const blob = await response.blob()
+
+      // Create a download link
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = `${projectData.repo_name}-backend.zip`
+
+      // Trigger download
+      document.body.appendChild(link)
+      link.click()
+
+      // Cleanup
+      window.URL.revokeObjectURL(downloadUrl)
+      document.body.removeChild(link)
+
+    } catch (error) {
+      console.error('Download error:', error)
+      setStatus(`Download error: ${error.message}`)
     }
   }
 
@@ -143,6 +223,15 @@ function App() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {projectData && (
+          <div className="download-container">
+            <button className="download-button" onClick={handleDownload}>
+              <FaDownload className="button-icon" />
+              <span>Download Generated Code</span>
+            </button>
           </div>
         )}
       </main>
