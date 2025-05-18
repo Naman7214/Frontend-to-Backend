@@ -46,15 +46,40 @@ class EndpointUseCase:
         if output_path:
             # Ensure the directory exists
             os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+            # Create the directory for output file
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+            
+            # Create path for sample payload file by removing .json extension if present
+            base_path = output_path
+            if base_path.endswith('.json'):
+                base_path = base_path[:-5]  # Remove .json extension
+            output_with_payload_sample_path = f"{base_path}_with_payload_sample.json"
+            os.makedirs(os.path.dirname(os.path.abspath(output_with_payload_sample_path)), exist_ok=True)
             
             # Write the JSON output
-            with open(output_path, 'w') as f:
+            with open(output_with_payload_sample_path, 'w') as f:
                 json.dump(result, f, indent=2)
+
+            output_path_result = []
+            for ele in result.get("endpoints", []):
+                temp = {}
+                for key, value in ele.items():
+                    if key == "payload_sample":
+                        continue
+                    temp[key] = value
+                output_path_result.append(temp)
+
+            final_result = {
+                "endpoints": output_path_result
+            }
+            with open(output_path, 'w') as f:
+                json.dump(final_result, f, indent=2)
                 
             if verbose:
+                print(f"Saved endpoints to {output_with_payload_sample_path}")
                 print(f"Saved endpoints to {output_path}")
             
             # Add the output path to the result
             result["output_path"] = output_path
                 
-        return output_path
+        return output_path, output_with_payload_sample_path

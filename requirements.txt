@@ -4,7 +4,4 @@ motor
 pydantic-settings
 langfuse
 aiofiles
-black 
-autoflake 
-isort 
-vulture
+httpx

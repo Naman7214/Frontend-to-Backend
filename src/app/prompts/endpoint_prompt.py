@@ -13,6 +13,7 @@ ENDPOINT_PROMPT_SYSTEM_PROMPT = """
     - description: Explain what the endpoint does based on how it's used in the component.
     - authRequired: Set true if you see auth tokens, protected routes, or user-specific data.
     - payload: All fields sent in the request body, including form fields and state variables passed to requests.
+    - payload_sample: Sample data structure for the payload. Use realistic values based on the component's context. Maintain the object's type as well.
     - queryParams: Parameters in the URL (after '?'). Look for URL construction with parameters.
     - response: Expected response structure based on how data is used in the component.
     - databaseRequired: Set true if the endpoint persists data or retrieves stored information.
@@ -68,6 +69,9 @@ ENDPOINT_PROMPT_SYSTEM_PROMPT = """
                         "required": true|false,
                         "description": "Field description"
                     }
+                },
+                "payload_sample": {
+                    "fieldName": "sample value",  // use realistic sample values
                 },
                 "queryParams": {
                     "paramName": {

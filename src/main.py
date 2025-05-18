@@ -43,7 +43,7 @@ async def set_user_query_middleware(request: Request, call_next):
         if request.method == "POST":
             try:
                 body = await request.json()
-                user_query = body.get("query", None)
+                user_query = body.get("url", None)
                 loggers["lfuse"].info(f"Extracted user query: {user_query}")
             except:
                 loggers["lfuse"].info("Could not parse request body as JSON")
