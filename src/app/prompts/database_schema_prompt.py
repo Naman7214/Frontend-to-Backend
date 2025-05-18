@@ -34,5 +34,5 @@ DATABASE_SCHEMA_USER_PROMPT = """
     please use the same collection name. For example, user authentication endpoints like signin, signup, etc., 
     should all use the same 'users' collection.
     """
-    
+
 DATABASE_SCHEMA_SYSTEM_PROMPT = "You are a helpful assistant that analyzes API endpoints and suggests database schemas."

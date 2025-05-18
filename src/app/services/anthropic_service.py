@@ -1,8 +1,9 @@
+import json
 import time
 from datetime import datetime
 
 from fastapi import Depends, HTTPException
-import json
+
 from src.app.config.settings import settings
 from src.app.models.domain.error import Error
 from src.app.repositories.error_repository import ErrorRepo
@@ -156,7 +157,6 @@ class AnthropicService:
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
             "anthropic-beta": "output-128k-2025-02-19",
-
         }
         payload = {
             "model": self.anthropic_model,

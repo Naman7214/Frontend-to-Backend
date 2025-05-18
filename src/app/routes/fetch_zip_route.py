@@ -1,11 +1,9 @@
-from fastapi import APIRouter, Depends, status, Request
-from fastapi.responses import JSONResponse, StreamingResponse
 import os
 
-from src.app.controllers.fetch_zip_controller import (
-    FetchZipController,
-)
-from src.app.models.schemas.query_schema import QueryRequest
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import StreamingResponse
+
+from src.app.controllers.fetch_zip_controller import FetchZipController
 from src.app.models.schemas.zip_request_schema import ZipPathRequest
 from src.app.utils.error_handler import handle_exceptions
 

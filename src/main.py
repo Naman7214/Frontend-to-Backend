@@ -1,14 +1,14 @@
+import uuid
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import uuid
+
 from src.app.config.database import mongodb_database
 from src.app.routes.backend_code_gen_route import (
     router as backend_code_gen_router,
 )
-from src.app.routes.fetch_zip_route import (
-    router as fetch_zip_router,
-)
+from src.app.routes.fetch_zip_route import router as fetch_zip_router
 from src.app.services.langfuse_service import langfuse_service
 from src.app.utils.logging_utils import loggers
 from src.app.utils.tracing_context_utils import (
@@ -73,19 +73,25 @@ async def create_unified_trace(request: Request, call_next):
     try:
         trace_id = request.headers.get("X-Request-ID", None)
         loggers["lfuse"].info(f"Trace ID: {trace_id}")
-        
+
         # Only create trace if we have a valid trace ID
         if trace_id and trace_id != "None" and trace_id != "":
             trace = langfuse_service.langfuse_client.trace(id=trace_id)
             request.state.trace_id = trace_id
-        elif request_context.get() and request_context.get() != "None" and request_context.get() != "":
+        elif (
+            request_context.get()
+            and request_context.get() != "None"
+            and request_context.get() != ""
+        ):
             # Use request_context if we have one and no trace_id
             trace = langfuse_service.langfuse_client.trace(
                 id=request_context.get(),
                 name=f"Trace ID {request_context.get()}",
             )
             token = tracer_context.set(trace)
-            loggers["lfuse"].info(f"trace object created for trace_id: {trace.id}")
+            loggers["lfuse"].info(
+                f"trace object created for trace_id: {trace.id}"
+            )
             loggers["lfuse"].info(f"trace object: {trace}")
             trace_id = trace.id
             loggers["lfuse"].info(f"Created Trace ID: {trace_id}")
@@ -93,14 +99,14 @@ async def create_unified_trace(request: Request, call_next):
         else:
             # No valid trace IDs available, skip trace creation
             request.state.trace_id = None
-            
+
         response = await call_next(request)
 
         # Only add header if we have a valid trace ID
         if request.state.trace_id:
             response.headers["X-Trace-ID"] = request.state.trace_id
     finally:
-        if 'token' in locals():
+        if "token" in locals():
             tracer_context.reset(token)
 
     return response

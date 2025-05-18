@@ -1,19 +1,32 @@
-from fastapi import Depends
-from src.app.usecases.endpoint_usecase.helper import EndpointHelper
-import os
 import json
-from typing import Dict, Any
+import os
+from typing import Any, Dict
+
+from fastapi import Depends
+
+from src.app.usecases.endpoint_usecase.helper import EndpointHelper
+
 
 class EndpointUseCase:
-    def __init__(self, endpoint_helper: EndpointHelper = Depends(EndpointHelper)) -> None:
+    def __init__(
+        self, endpoint_helper: EndpointHelper = Depends(EndpointHelper)
+    ) -> None:
         self.endpoint_helper = endpoint_helper
-    
-    async def execute(self, repo_path: str, output_path: str = None, verbose: bool = False, max_files: int = None, 
-                     all_files: bool = False, api_files: bool = False, react_hooks: bool = False, 
-                     auth_files: bool = False) -> Dict[str, Any]:
+
+    async def execute(
+        self,
+        repo_path: str,
+        output_path: str = None,
+        verbose: bool = False,
+        max_files: int = None,
+        all_files: bool = False,
+        api_files: bool = False,
+        react_hooks: bool = False,
+        auth_files: bool = False,
+    ) -> Dict[str, Any]:
         """
         Extract API endpoint specifications from a React codebase.
-        
+
         Args:
             repo_path (str): Path to the React repository to analyze
             output_path (str, optional): Path to save JSON output. Defaults to None.
@@ -23,14 +36,14 @@ class EndpointUseCase:
             api_files (bool, optional): Target API-related files. Defaults to False.
             react_hooks (bool, optional): Find files using React hooks. Defaults to False.
             auth_files (bool, optional): Find auth-related files. Defaults to False.
-            
+
         Returns:
             Dict[str, Any]: Dictionary with "endpoints" key containing a list of endpoint specifications
         """
         # Validate repo_path exists
         if not os.path.isdir(repo_path):
             raise ValueError(f"Repository path does not exist: {repo_path}")
-        
+
         # Extract endpoints
         result = await self.endpoint_helper.extract_endpoints(
             root_dir=repo_path,
@@ -39,25 +52,36 @@ class EndpointUseCase:
             all_files=all_files,
             api_files=api_files,
             react_hooks=react_hooks,
-            auth_files=auth_files
+            auth_files=auth_files,
         )
-        
+
         # Save to output file if specified
         if output_path:
             # Ensure the directory exists
-            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+            os.makedirs(
+                os.path.dirname(os.path.abspath(output_path)), exist_ok=True
+            )
             # Create the directory for output file
-            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-            
+            os.makedirs(
+                os.path.dirname(os.path.abspath(output_path)), exist_ok=True
+            )
+
             # Create path for sample payload file by removing .json extension if present
             base_path = output_path
-            if base_path.endswith('.json'):
+            if base_path.endswith(".json"):
                 base_path = base_path[:-5]  # Remove .json extension
-            output_with_payload_sample_path = f"{base_path}_with_payload_sample.json"
-            os.makedirs(os.path.dirname(os.path.abspath(output_with_payload_sample_path)), exist_ok=True)
-            
+            output_with_payload_sample_path = (
+                f"{base_path}_with_payload_sample.json"
+            )
+            os.makedirs(
+                os.path.dirname(
+                    os.path.abspath(output_with_payload_sample_path)
+                ),
+                exist_ok=True,
+            )
+
             # Write the JSON output
-            with open(output_with_payload_sample_path, 'w') as f:
+            with open(output_with_payload_sample_path, "w") as f:
                 json.dump(result, f, indent=2)
 
             output_path_result = []
@@ -69,28 +93,30 @@ class EndpointUseCase:
                     temp[key] = value
                 output_path_result.append(temp)
 
-            final_result = {
-                "endpoints": output_path_result
-            }
-            with open(output_path, 'w') as f:
+            final_result = {"endpoints": output_path_result}
+            with open(output_path, "w") as f:
                 json.dump(final_result, f, indent=2)
-                
+
             if verbose:
                 print(f"Saved endpoints to {output_with_payload_sample_path}")
                 print(f"Saved endpoints to {output_path}")
-            
+
             # Add the output path to the result
             result["output_path"] = output_path
             simplified_endpoints = [
                 {
                     "endpointName": endpoint["endpointName"],
                     "method": endpoint["method"],
-                    "description": endpoint["description"]
+                    "description": endpoint["description"],
                 }
                 for endpoint in result.get("endpoints", [])
             ]
-            
+
             # You can print the simplified list if needed
             print(simplified_endpoints)
-                
-        return output_path, output_with_payload_sample_path, simplified_endpoints
+
+        return (
+            output_path,
+            output_with_payload_sample_path,
+            simplified_endpoints,
+        )

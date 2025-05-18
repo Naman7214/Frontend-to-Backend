@@ -1,10 +1,15 @@
-from fastapi import Depends
 import os
+
+from fastapi import Depends
+
 from src.app.services.anthropic_service import AnthropicService
 from src.app.usecases.code_generation_usecase.helper import CodeGenerationHelper
 
+
 class CodeGenerationUseCase:
-    def __init__(self, anthropic_service: AnthropicService = Depends(AnthropicService)):
+    def __init__(
+        self, anthropic_service: AnthropicService = Depends(AnthropicService)
+    ):
         self.anthropic_service = anthropic_service
 
     async def execute(
@@ -22,9 +27,13 @@ class CodeGenerationUseCase:
 
         # Load reference templates
         print("Loading reference templates...")
-        auth_template = CodeGenerationHelper.load_reference_template(auth_filename)
+        auth_template = CodeGenerationHelper.load_reference_template(
+            auth_filename
+        )
         db_template = CodeGenerationHelper.load_reference_template(db_filename)
-        print(f"Loaded {len(auth_template)} auth reference files and {len(db_template)} database reference files")
+        print(
+            f"Loaded {len(auth_template)} auth reference files and {len(db_template)} database reference files"
+        )
 
         # Build prompt
         print("Building prompt...")
@@ -38,7 +47,10 @@ class CodeGenerationUseCase:
         print("This may take a few minutes...\n")
         print("----- Claude API Response -----")
         response_text = ""
-        async for chunk_type, chunk_content in self.anthropic_service.stream_completions(
+        async for (
+            chunk_type,
+            chunk_content,
+        ) in self.anthropic_service.stream_completions(
             user_prompt=prompt,
             system_prompt="You are a senior backend architect specializing in Node.js API development. Always use ES Module syntax (import/export) instead of CommonJS (require/module.exports). Include .js file extensions in all import paths. Create a consistent, modern architecture.",
             thinking_budget=0,

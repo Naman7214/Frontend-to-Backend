@@ -1,21 +1,24 @@
 import json
 import os
 
+
 class PostmanCollectionUseCase:
     def __init__(self):
         pass
 
-    async def convert_to_postman_collection(self, spec_file_path: str, output_file_path: str):
-        with open(spec_file_path, 'r') as f:
+    async def convert_to_postman_collection(
+        self, spec_file_path: str, output_file_path: str
+    ):
+        with open(spec_file_path, "r") as f:
             spec = json.load(f)
 
         collection = {
             "info": {
                 "name": "Game API Collection",
                 "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-                "_postman_id": "auto-generated-id"
+                "_postman_id": "auto-generated-id",
             },
-            "item": []
+            "item": [],
         }
 
         for endpoint in spec["endpoints"]:
@@ -28,16 +31,14 @@ class PostmanCollectionUseCase:
 
             headers = []
             if method in ["POST", "PUT", "PATCH"]:
-                headers.append({
-                    "key": "Content-Type",
-                    "value": "application/json"
-                })
+                headers.append(
+                    {"key": "Content-Type", "value": "application/json"}
+                )
 
             if auth_required:
-                headers.append({
-                    "key": "Authorization",
-                    "value": "Bearer {{auth_token}}"
-                })
+                headers.append(
+                    {"key": "Authorization", "value": "Bearer {{auth_token}}"}
+                )
 
             # Request URL & Params
             url_object = {
@@ -48,48 +49,42 @@ class PostmanCollectionUseCase:
                     {
                         "key": key,
                         "value": "",
-                        "description": val.get("description", "")
+                        "description": val.get("description", ""),
                     }
                     for key, val in query_params.items()
-                ]
+                ],
             }
 
             request = {
                 "method": method,
                 "header": headers,
                 "url": url_object,
-                "description": description
+                "description": description,
             }
 
             if method in ["POST", "PUT", "PATCH"]:
                 request["body"] = {
                     "mode": "raw",
                     "raw": json.dumps(payload, indent=2),
-                    "options": {
-                        "raw": {
-                            "language": "json"
-                        }
-                    }
+                    "options": {"raw": {"language": "json"}},
                 }
 
-            collection["item"].append({
-                "name": f"{method} {url}",
-                "request": request
-            })
+            collection["item"].append(
+                {"name": f"{method} {url}", "request": request}
+            )
 
         with open(output_file_path, "w") as f:
             json.dump(collection, f, indent=2)
 
-
     async def execute(self, file_path: str):
-        
+
         # Get the directory of the input file
         input_dir = os.path.dirname(file_path)
-        
+
         # Create the output file path in the same directory with name "postman_collection.json"
         output_file_path = os.path.join(input_dir, "postman_collection.json")
-        
+
         # Call the function to convert and save the collection
         await self.convert_to_postman_collection(file_path, output_file_path)
-        
+
         return output_file_path

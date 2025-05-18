@@ -1,4 +1,4 @@
-CODE_GENERATION_PROMPT = '''
+CODE_GENERATION_PROMPT = """
 # {project_name} - Full Codebase Generation
 
 ## Project Overview
@@ -55,4 +55,4 @@ Return a valid JSON array of objects with the following structure:
 Ensure all files use consistent coding style and properly reference each other.
 Do not include any explanations or markdown in your response, only the JSON array.
 Ensure to use the same db_name mentioned in the endpoints.
-''' 
+"""

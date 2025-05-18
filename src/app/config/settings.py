@@ -31,8 +31,10 @@ class Settings(BaseSettings):
     LANGFUSE_PUBLIC_KEY: str
     LANGFUSE_SECRET_KEY: str
     LANGFUSE_HOST: str = "http://localhost:3000"
-    
-    MOCK_DATA_API_URL: str = "http://192.168.17.189:8000/generate-mock-data?count=10"
+
+    MOCK_DATA_API_URL: str = (
+        "http://192.168.17.189:8000/generate-mock-data?count=10"
+    )
 
     class Config:
         env_file = ".env"
