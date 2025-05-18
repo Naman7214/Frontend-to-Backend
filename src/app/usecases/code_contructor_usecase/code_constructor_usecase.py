@@ -6,7 +6,7 @@ import zipfile
 class CodeConstructorUseCase:
     def __init__(self, ):
         pass
-    def execute(self, code_json_path):
+    async def execute(self, code_json_path):
         """
         Reads JSON file containing code structure and creates the directory structure with files,
         then zips the entire directory.
@@ -71,5 +71,11 @@ class CodeConstructorUseCase:
                     rel_path = os.path.relpath(file_path, os.path.dirname(api_dir))
                     # Add the file to the zip
                     zipf.write(file_path, rel_path)
+            
+            # Check if postman_collection.json exists and add it to the zip
+            postman_collection_path = os.path.join(json_dir, "postman_collection.json")
+            if os.path.exists(postman_collection_path):
+                # Add the postman collection to the root of the zip
+                zipf.write(postman_collection_path, "postman_collection.json")
         
         return zip_path

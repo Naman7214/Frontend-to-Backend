@@ -9,7 +9,7 @@ function App() {
   const [projectData, setProjectData] = useState(null)
   const [processingSteps, setProcessingSteps] = useState([
     { id: 'clone', label: 'Clone repository', completed: false, active: false },
-    { id: 'extract', label: 'Extract API endpoints', completed: false, active: false },
+    { id: 'extract', label: 'Extracting API endpoints', completed: false, active: false },
     { id: 'schema', label: 'Generate database schema', completed: false, active: false },
     { id: 'priority', label: 'Prioritize endpoints', completed: false, active: false },
     { id: 'generate', label: 'Generate backend code (AI)', completed: false, active: false },
@@ -191,9 +191,10 @@ function App() {
                     if (Array.isArray(data.endpoints)) {
                       const formattedEndpoints = data.endpoints.map(endpoint => ({
                         method: endpoint.method || 'GET',
-                        path: endpoint.path || '',
+                        path: endpoint.endpointName || endpoint.path || '',
                         description: endpoint.description || endpoint.summary || ''
                       }))
+                      console.log('Received endpoints:', formattedEndpoints)
                       setEndpoints(formattedEndpoints)
                     }
                     break
@@ -249,20 +250,44 @@ function App() {
         throw new Error('Zip file path not found in project data')
       }
 
-      // Show instructions for manual download
-      alert(`
-      Backend code generation complete!
+      // Show loading state for download
+      setLoading(true)
+
+      // Send POST request to fetch the zip file
+      const response = await fetch(`${API_BASE_URL}/fetch-zip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ zip_path: zipFilePath }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status} ${response.statusText}`)
+      }
+
+      // Get the blob from the response
+      const blob = await response.blob()
       
-      To access your files:
-      1. The zip file is available on the server at: ${zipFilePath}
-      2. You can manually retrieve this file from the server
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(blob)
       
-      Project name: ${repoName}
-    `)
+      // Create a temporary link element to trigger the download
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${repoName}.zip`
+      document.body.appendChild(a)
+      a.click()
+      
+      // Clean up
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      setLoading(false)
 
     } catch (error) {
       console.error('Download error:', error)
       alert(`Download error: ${error.message}`)
+      setLoading(false)
     }
   }
 
@@ -283,7 +308,7 @@ function App() {
         <div className="logo-section">
           <div className="logo">
             <FaRocket className="rocket-icon" />
-            <h1>engine</h1>
+            <h1>Engine</h1>
           </div>
           <p className="tagline">powering rocket</p>
         </div>
@@ -325,57 +350,68 @@ function App() {
           </button>
         </div>
 
-        {endpoints.length > 0 && (
-          <div className="endpoints-container">
-            <div className="endpoints-header">
-              <FaServer className="endpoints-icon" />
-              <h2>API Endpoints Generated</h2>
-              <div className="endpoints-count">{endpoints.length}</div>
-            </div>
+        <div className="side-by-side-container">
+          {endpoints.length > 0 && (
+            <div className="endpoints-container">
+              <div className="endpoints-header">
+                <FaServer className="endpoints-icon" />
+                <h2>API Endpoints Generated</h2>
+                <div className="endpoints-count">{endpoints.length}</div>
+              </div>
 
-            <div className="endpoints-list">
-              {endpoints.map((endpoint, index) => (
-                <div key={index} className="endpoint-item">
-                  <div className="endpoint-top">
-                    <span className={`method ${endpoint.method.toLowerCase()}`}>{endpoint.method}</span>
-                    <span className="path">{endpoint.path}</span>
-                  </div>
-                  {endpoint.description && (
-                    <div className="endpoint-description">
-                      <p>{endpoint.description}</p>
-                    </div>
-                  )}
+              <div className="endpoints-table-container">
+                <div className="endpoints-table-header">
+                  <div className="method-column">METHOD</div>
+                  <div className="path-column">ENDPOINT</div>
+                  <div className="description-column">DESCRIPTION</div>
                 </div>
-              ))}
+                <div className="endpoints-list">
+                  {endpoints.map((endpoint, index) => (
+                    <div key={index} className="endpoint-item">
+                      <div className="method-column">
+                        <span className={`method ${(endpoint.method || 'get').toLowerCase()}`}>
+                          {endpoint.method || 'GET'}
+                        </span>
+                      </div>
+                      <div className="path-column">
+                        <code className="path">{endpoint.path || 'Unknown path'}</code>
+                      </div>
+                      <div className="description-column">
+                        <p>{endpoint.description || 'No description available'}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {loading && (
-          <div className="generation-progress">
-            <div className="progress-header">
-              <h2>Generation Progress</h2>
-            </div>
+          {loading && (
+            <div className="generation-progress">
+              <div className="progress-header">
+                <h2>Generation Progress</h2>
+              </div>
 
-            <div className="progress-steps">
-              {processingSteps.map(step => (
-                // Only show steps that are active or completed
-                (step.active || step.completed) && (
-                  <div key={step.id} className={`progress-step ${step.active ? 'active' : ''} ${step.completed ? 'completed' : ''}`}>
-                    {step.completed ? (
-                      <FaCheckCircle className="step-icon completed" />
-                    ) : step.active ? (
-                      <FaSpinner className="step-icon spinning" />
-                    ) : (
-                      <div className="step-icon empty" />
-                    )}
-                    <span className="step-label">{step.label}</span>
-                  </div>
-                )
-              ))}
+              <div className="progress-steps">
+                {processingSteps.map(step => (
+                  // Only show steps that are active or completed
+                  (step.active || step.completed) && (
+                    <div key={step.id} className={`progress-step ${step.active ? 'active' : ''} ${step.completed ? 'completed' : ''}`}>
+                      {step.completed ? (
+                        <FaCheckCircle className="step-icon completed" />
+                      ) : step.active ? (
+                        <FaSpinner className="step-icon spinning" />
+                      ) : (
+                        <div className="step-icon empty" />
+                      )}
+                      <span className="step-label">{step.label}</span>
+                    </div>
+                  )
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {error && (
           <div className="error-container">
@@ -405,10 +441,10 @@ function App() {
             <button
               className="download-button"
               onClick={handleDownload}
-              title="Shows information about your generated code"
+              title="Download the generated code as a ZIP file"
             >
               <FaDownload className="button-icon" />
-              <span>View Code Info</span>
+              <span>Download Code</span>
             </button>
           </div>
         )}
