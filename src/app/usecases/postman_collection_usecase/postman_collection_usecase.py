@@ -5,7 +5,7 @@ class PostmanCollectionUseCase:
     def __init__(self):
         pass
 
-    async def convert_to_postman_collection(spec_file_path: str, output_file_path: str):
+    async def convert_to_postman_collection(self, spec_file_path: str, output_file_path: str):
         with open(spec_file_path, 'r') as f:
             spec = json.load(f)
 
@@ -80,7 +80,6 @@ class PostmanCollectionUseCase:
         with open(output_file_path, "w") as f:
             json.dump(collection, f, indent=2)
 
-        print(f"✅ Postman collection saved to {output_file_path}")
 
     async def execute(self, file_path: str):
         
