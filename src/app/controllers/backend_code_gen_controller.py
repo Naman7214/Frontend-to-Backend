@@ -1,10 +1,12 @@
 import json
+import os
 from fastapi import Depends
 from src.app.usecases.clone_usecase.clone_usecase import CloneUseCase
 from src.app.usecases.endpoint_usecase.endpoint_usecase import EndpointUseCase
-import json
 from src.app.usecases.set_priority_usecase import SetPriorityUseCase
 from src.app.usecases.database_schema_usecase.database_schema_usecase import DatabaseSchemaUseCase
+from src.app.usecases.code_generation_usecase.code_generation_usecase import CodeGenerationUseCase
+
 class BackendCodeGenController:
     """
     Controller for extracting nodes from url.
@@ -14,17 +16,18 @@ class BackendCodeGenController:
         set_priority_usecase: SetPriorityUseCase = Depends(SetPriorityUseCase),
         clone_usecase: CloneUseCase = Depends(),
         endpoint_usecase: EndpointUseCase = Depends(),
-        db_schema_usecase: DatabaseSchemaUseCase = Depends()
+        db_schema_usecase: DatabaseSchemaUseCase = Depends(),
+        code_generation_usecase: CodeGenerationUseCase = Depends(CodeGenerationUseCase),
     ):
         self.clone_usecase = clone_usecase
         self.endpoint_usecase = endpoint_usecase
         self.set_priority_usecase = set_priority_usecase
         self.db_schema_usecase = db_schema_usecase
-
+        self.code_generation_usecase = code_generation_usecase
 
     async def code_gen(self, url: str):
         """
-        Extract nodes from url.
+        Extract nodes from url and generate codebase.
         """
         result = await self.clone_usecase.execute(url)
         repo_path = result["repo_path"]
@@ -34,7 +37,17 @@ class BackendCodeGenController:
         
         _ = await self.db_schema_usecase.execute(json_file_path=f"Projects/{project_uuid}/endpoints.json", repo_path=repo_path)
 
-        priority_result = await self.set_priority_usecase.set_priority(json_file_path=f"Projects/{project_uuid}/endpoints.json")
+        # priority_result = await self.set_priority_usecase.set_priority(json_file_path=f"Projects/{project_uuid}/endpoints.json")
+        # project_uuid = "6b58dcc1-f1da-4aa8-b56c-46f9b1c4e5e7"
+        # repo_path = f"Projects/{project_uuid}/first-app"
 
-        return f"Code generation logic for URL: {url}"
-        # return await self.usecase.execute()
+        # Construct input path for code generation
+        input_path = f"Projects/{project_uuid}/sorted_endpoints.json"
+        # Call code generation usecase
+        repo_name = os.path.basename(repo_path.rstrip('/'))
+
+        final_code_path = await self.code_generation_usecase.execute(
+            input_path=input_path,
+            project_name=repo_name
+        )
+        return final_code_path
