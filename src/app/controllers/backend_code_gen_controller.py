@@ -166,16 +166,20 @@ class BackendCodeGenController:
             postman_result = await postman_task
             yield ("status", "Postman collection generated successfully")
             
+            # Generate code constructor
+            yield ("status", "Constructing and zipping final API codebase...")
+            code_json_path = f"Projects/{project_uuid}/final_code.json"
+            zip_path = await self.code_constructor_usecase.execute(code_json_path)
+            yield ("status", "API codebase constructed and zipped successfully")
+            
             # Return completion data
             yield (
                 "completed",
                 {
-                    "repo_path": repo_path,
                     "project_uuid": project_uuid,
                     "repo_name": repo_name,
-                    "endpoints_path": output_path,
-                    "endpoints": simplified_end_points,
                     "final_code_path": final_code_path,
+                    "zip_path": zip_path
                 }
             )
         
