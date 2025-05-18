@@ -1,0 +1,22 @@
+[
+    {
+        "file_path": "src/db/index.js",
+        "code": "import mongoose from 'mongoose';\nimport { MONGO_URI, MONGO_DB_NAME } from '../constants/db.js';\n\n/**\n * Connect to MongoDB using Mongoose\n * @returns {Promise<void>}\n */\nexport async function connectDB() {\n  try {\n    await mongoose.connect(MONGO_URI, {\n      dbName: MONGO_DB_NAME,\n      useNewUrlParser: true,\n      useUnifiedTopology: true,\n    });\n    console.log('MongoDB connected');\n  } catch (err) {\n    console.error('MongoDB connection error:', err);\n    throw new Error('Failed to connect to MongoDB');\n  }\n}\n\n// Optional: handle connection events for better observability\nmongoose.connection.on('disconnected', () => {\n  console.warn('MongoDB disconnected');\n});\n\nmongoose.connection.on('reconnected', () => {\n  console.log('MongoDB reconnected');\n});\n\nmongoose.connection.on('error', (err) => {\n  console.error('MongoDB connection error:', err);\n}); "
+    },
+    {
+        "file_path": "src/constants/db.js",
+        "code": "export const MONGO_DB_NAME = process.env.MONGO_DB_NAME || 'cleanarch';\nexport const USER_COLLECTION_NAME = process.env.USER_COLLECTION_NAME || 'users';\nexport const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';\n"
+    },
+    {
+        "file_path": "src/models/User.js",
+        "code": "import mongoose from 'mongoose';\nimport { USER_COLLECTION_NAME } from '../constants/db.js';\n\nconst userSchema = new mongoose.Schema({\n  email: { type: String, required: true},\n  password: { type: String, required: true },\n  // ...other fields\n})\n// , { timestamps: true });\n\nconst User = mongoose.model(USER_COLLECTION_NAME, userSchema);\nexport default User; "
+    },
+    {
+        "file_path": "src/repositories/userRepository.js",
+        "code": "import User from '../models/User.js';\n\nexport async function create(userData) {\n  try {\n    return await User.create(userData);\n  } catch (err) {\n    throw { status: 500, message: `Repository create user failed: ${err.message}` };\n  }\n}\n\nexport async function findByEmail(email) {\n  try {\n    return await User.findOne({ email });\n  } catch (err) {\n    throw { status: 500, message: `Repository find user by email failed: ${err.message}` };\n  }\n} "
+    },
+    {
+        "file_path": "src/app.js",
+        "code": "import express from 'express';\nimport dotenv from 'dotenv';\nimport router from './routes/index.js';\nimport cookieParser from 'cookie-parser';\nimport { connectDB } from './db/index.js';\n\ndotenv.config();\n\nconst app = express();\napp.use(express.json());\napp.use(cookieParser());\n\napp.use('/api', router);\n\nconst PORT = process.env.PORT || 5000;\n\nasync function startServer() {\n  try {\n    await connectDB();\n    app.listen(PORT, () => {\n      console.log(`Server running on port ${PORT}`);\n    });\n  } catch (err) {\n    console.error('Failed to start server:', err.message);\n    process.exit(1);\n  }\n}\n\nstartServer(); "
+    }
+]
