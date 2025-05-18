@@ -155,10 +155,12 @@ class AnthropicService:
             "x-api-key": settings.ANTHROPIC_API_KEY,
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
+            "anthropic-beta": "output-128k-2025-02-19",
+
         }
         payload = {
             "model": self.anthropic_model,
-            "max_tokens": 63000,
+            "max_tokens": 90000,
             "stream": True,
             "system": [
                 {
