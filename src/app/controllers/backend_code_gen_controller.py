@@ -9,6 +9,7 @@ from src.app.usecases.set_priority_usecase import SetPriorityUseCase
 from src.app.usecases.database_schema_usecase.database_schema_usecase import DatabaseSchemaUseCase
 from src.app.usecases.postman_collection_usecase.postman_collection_usecase import PostmanCollectionUseCase
 from src.app.usecases.code_generation_usecase.code_generation_usecase import CodeGenerationUseCase
+from src.app.usecases.code_contructor_usecase.code_constructor_usecase import CodeConstructorUseCase
 from src.app.repositories.error_repository import ErrorRepo
 from src.app.models.domain.error import Error
 import asyncio
@@ -25,6 +26,7 @@ class BackendCodeGenController:
         code_generation_usecase: CodeGenerationUseCase = Depends(CodeGenerationUseCase),
         postman_collection_usecase: PostmanCollectionUseCase = Depends(PostmanCollectionUseCase),
         error_repository: ErrorRepo = Depends(ErrorRepo),
+        code_constructor_usecase: CodeConstructorUseCase = Depends(CodeConstructorUseCase)
     ):
         self.clone_usecase = clone_usecase
         self.endpoint_usecase = endpoint_usecase
@@ -33,6 +35,7 @@ class BackendCodeGenController:
         self.code_generation_usecase = code_generation_usecase
         self.postman_collection_usecase = postman_collection_usecase
         self.error_repository = error_repository
+        self.code_constructor_usecase = code_constructor_usecase
 
     async def code_gen(self, url: str):
         """
@@ -75,8 +78,15 @@ class BackendCodeGenController:
         # Wait for both tasks to complete
         final_code_path = await code_gen_task
         _ = await postman_task
-
-        return "hi"
+        # Generate code constructor
+        code_json_path = f"Projects/{project_uuid}/final_code.json"
+        api_dir = await self.code_constructor_usecase.execute(code_json_path)
+        return {
+            "project_uuid": project_uuid,
+            "repo_name": repo_name,
+            "final_code_path": final_code_path,
+            "api_dir": api_dir
+        }
         
     async def stream_code_gen(self, url: str):
         """
