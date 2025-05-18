@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, status, Request
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from src.app.controllers.backend_code_gen_controller import (
     BackendCodeGenController,
@@ -29,4 +29,19 @@ async def backend_code_gen(
             "error": "",
         },
         status_code=status.HTTP_200_OK,
+    )
+
+
+@router.post("/stream-code-gen")
+async def stream_workflow(
+    request: Request,
+    query: QueryRequest,
+    build_workflow_controller: BackendCodeGenController = Depends(
+        BackendCodeGenController
+    ),
+):
+    """Stream workflow generation process to the client."""
+    return StreamingResponse(
+        build_workflow_controller.format_streaming_events(query.url, request),
+        media_type="text/event-stream",
     )

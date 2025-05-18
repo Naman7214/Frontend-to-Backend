@@ -81,5 +81,16 @@ class EndpointUseCase:
             
             # Add the output path to the result
             result["output_path"] = output_path
+            simplified_endpoints = [
+                {
+                    "endpointName": endpoint["endpointName"],
+                    "method": endpoint["method"],
+                    "description": endpoint["description"]
+                }
+                for endpoint in result.get("endpoints", [])
+            ]
+            
+            # You can print the simplified list if needed
+            print(simplified_endpoints)
                 
-        return output_path, output_with_payload_sample_path
+        return output_path, output_with_payload_sample_path, simplified_endpoints
