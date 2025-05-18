@@ -80,12 +80,12 @@ class BackendCodeGenController:
         _ = await postman_task
         # Generate code constructor
         code_json_path = f"Projects/{project_uuid}/final_code.json"
-        api_dir = await self.code_constructor_usecase.execute(code_json_path)
+        zip_path = await self.code_constructor_usecase.execute(code_json_path)
         return {
             "project_uuid": project_uuid,
             "repo_name": repo_name,
             "final_code_path": final_code_path,
-            "api_dir": api_dir
+            "zip_path": zip_path
         }
         
     async def stream_code_gen(self, url: str):
