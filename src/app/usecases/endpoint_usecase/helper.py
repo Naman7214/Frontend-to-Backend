@@ -354,7 +354,7 @@ class EndpointHelper:
         all_endpoints = []
         
         # Process files concurrently in batches for better performance
-        batch_size = 5  # Process 5 files concurrently
+        batch_size = 1  # Process 5 files concurrently
         for i in range(0, len(react_files), batch_size):
             batch = react_files[i:i+batch_size]
             batch_tasks = []

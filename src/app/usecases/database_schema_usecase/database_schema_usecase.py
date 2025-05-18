@@ -37,9 +37,12 @@ class DatabaseSchemaUseCase:
                 
                  # Create a copy of schema_analysis without samples for storing in the endpoint
                 schema_analysis_for_json = {key: value for key, value in schema_analysis.items() if key != 'samples'}
-                
+
+                db_name = os.path.basename(repo_path.rstrip('/'))
+
                 # Update endpoint data with cleaned schema analysis (without samples)
                 endpoint['database_schema'] = schema_analysis_for_json
+                endpoint['database_schema']['db_name'] = db_name
                 
                 # If schema analysis was successful, generate and insert mock data
                 # (Use the original schema_analysis with samples for this)
