@@ -12,6 +12,7 @@ function App() {
     return localStorage.getItem('theme') || 'dark'
   })
   const eventSourceRef = useRef(null)
+  const API_BASE_URL = 'http://localhost:8000'
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -45,40 +46,74 @@ function App() {
     }
 
     try {
-      // Connect to the server-sent events endpoint
-      const apiUrl = new URL('http://localhost:8000/stream-code-gen')
+      // First make the initial POST request to start the process
+      const response = await fetch(`${API_BASE_URL}/stream-code-gen`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: repoUrl }),
+      })
 
-      const eventSource = new EventSource(`http://localhost:8000/stream-code-gen`)
+      if (!response.ok) {
+        throw new Error('Failed to start code generation')
+      }
+
+      // Now connect to SSE stream
+      const eventSource = new EventSource(`${API_BASE_URL}/stream-code-gen`)
       eventSourceRef.current = eventSource
 
       // Listen for different event types
       eventSource.addEventListener('status', (event) => {
-        const data = JSON.parse(event.data)
-        setStatus(data.status)
+        try {
+          const data = JSON.parse(event.data)
+          setStatus(data.status)
+        } catch (error) {
+          console.error('Error parsing status event:', error)
+        }
       })
 
       eventSource.addEventListener('endpoints', (event) => {
-        const data = JSON.parse(event.data)
-        const formattedEndpoints = data.endpoints.map(endpoint => ({
-          method: endpoint.method || 'GET',
-          path: endpoint.path || '',
-          description: endpoint.description || ''
-        }))
-        setEndpoints(formattedEndpoints)
+        try {
+          const data = JSON.parse(event.data)
+          if (Array.isArray(data.endpoints)) {
+            const formattedEndpoints = data.endpoints.map(endpoint => ({
+              method: endpoint.method || 'GET',
+              path: endpoint.path || '',
+              description: endpoint.description || endpoint.summary || ''
+            }))
+            setEndpoints(formattedEndpoints)
+          }
+        } catch (error) {
+          console.error('Error parsing endpoints event:', error)
+        }
       })
 
       eventSource.addEventListener('completed', (event) => {
-        const data = JSON.parse(event.data)
-        setProjectData(data.result)
-        eventSource.close()
-        setLoading(false)
+        try {
+          const data = JSON.parse(event.data)
+          if (data.result) {
+            setProjectData(data.result)
+          }
+          setLoading(false)
+        } catch (error) {
+          console.error('Error parsing completed event:', error)
+        } finally {
+          eventSource.close()
+        }
       })
 
       eventSource.addEventListener('error', (event) => {
-        const data = JSON.parse(event.data)
-        setStatus(`Error: ${data.error}`)
-        eventSource.close()
-        setLoading(false)
+        try {
+          const data = JSON.parse(event.data)
+          setStatus(`Error: ${data.error || 'Unknown error occurred'}`)
+        } catch (error) {
+          console.error('Error parsing error event:', error)
+          setStatus('An error occurred during code generation')
+        } finally {
+          eventSource.close()
+          setLoading(false)
+        }
       })
 
       eventSource.addEventListener('message_stop', () => {
@@ -86,22 +121,13 @@ function App() {
         setLoading(false)
       })
 
-      // Handle connection error
+      // Handle general errors
       eventSource.onerror = (error) => {
         console.error('EventSource error:', error)
         setStatus('Error connecting to the server')
         eventSource.close()
         setLoading(false)
       }
-
-      // Initialize with a POST request to start the process
-      await fetch('http://localhost:8000/stream-code-gen', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: repoUrl }),
-      })
     } catch (error) {
       console.error('Error:', error)
       setStatus(`Error: ${error.message}`)
@@ -113,28 +139,15 @@ function App() {
     if (!projectData) return
 
     try {
-      const response = await fetch(`http://localhost:8000/download-code?project_uuid=${projectData.project_uuid}`)
+      const zipFilePath = projectData.zip_path
+      const repoName = projectData.repo_name || 'backend-code'
 
-      if (!response.ok) {
-        throw new Error('Failed to download generated code')
+      if (!zipFilePath) {
+        throw new Error('Zip file path not found in project data')
       }
 
-      // Get the blob from the response
-      const blob = await response.blob()
-
-      // Create a download link
-      const downloadUrl = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.download = `${projectData.repo_name}-backend.zip`
-
-      // Trigger download
-      document.body.appendChild(link)
-      link.click()
-
-      // Cleanup
-      window.URL.revokeObjectURL(downloadUrl)
-      document.body.removeChild(link)
+      // Make a request to download the file
+      window.location.href = `${API_BASE_URL}/download-zip?path=${encodeURIComponent(zipFilePath)}&filename=${encodeURIComponent(repoName)}`
 
     } catch (error) {
       console.error('Download error:', error)
