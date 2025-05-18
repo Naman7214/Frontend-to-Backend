@@ -158,13 +158,12 @@ class AnthropicService:
         }
         payload = {
             "model": self.anthropic_model,
-            "max_tokens": 17000,
+            "max_tokens": 63000,
             "stream": True,
             "system": [
                 {
                     "type": "text",
                     "text": system_prompt,
-                    "cache_control": {"type": "ephemeral"},
                 }
             ],
             "messages": [
