@@ -105,7 +105,7 @@ class BackendCodeGenController:
 
         postman_task = asyncio.create_task(
             self.postman_collection_usecase.execute(
-                output_path_with_sample_payload
+                output_path_with_sample_payload, repo_name
             )
         )
 
@@ -200,7 +200,7 @@ class BackendCodeGenController:
 
             postman_task = asyncio.create_task(
                 self.postman_collection_usecase.execute(
-                    output_path_with_sample_payload
+                    output_path_with_sample_payload, repo_name
                 )
             )
 

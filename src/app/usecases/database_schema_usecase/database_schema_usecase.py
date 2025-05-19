@@ -1,16 +1,24 @@
 import asyncio
 import json
 import os
+import traceback
 from typing import Any, Dict
 
 from fastapi import Depends, HTTPException
 
+from src.app.models.domain.error import Error
+from src.app.repositories.error_repository import ErrorRepo
 from src.app.usecases.database_schema_usecase.helper import DatabaseSchemaHelper
 
 
 class DatabaseSchemaUseCase:
-    def __init__(self, helper: DatabaseSchemaHelper = Depends()):
+    def __init__(
+        self, 
+        helper: DatabaseSchemaHelper = Depends(),
+        error_repo: ErrorRepo = Depends()
+    ):
         self.helper = helper
+        self.error_repo = error_repo
 
     async def execute(
         self, json_file_path: str, repo_path: str
@@ -19,10 +27,24 @@ class DatabaseSchemaUseCase:
             # Process the JSON file
             result = await self._process_json_file(json_file_path, repo_path)
             return result
-        except Exception as e:
-            print(
-                f"Error in DatabaseSchemaUseCase execute for {json_file_path}, repo_path {repo_path}: {str(e)}"
+        except FileNotFoundError as e:
+            error_msg = f"File not found in DatabaseSchemaUseCase.execute: {json_file_path}. Error: {str(e)}"
+            await self._log_error(error_msg)
+            raise HTTPException(
+                status_code=404,
+                detail=f"Input file not found: {json_file_path}",
             )
+        except json.JSONDecodeError as e:
+            error_msg = f"Invalid JSON format in DatabaseSchemaUseCase.execute: {json_file_path}. Error: {str(e)}"
+            await self._log_error(error_msg)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid JSON format in file {json_file_path}",
+            )
+        except Exception as e:
+            stack_trace = traceback.format_exc()
+            error_msg = f"Error in DatabaseSchemaUseCase.execute for file: {json_file_path}, repo_path: {repo_path}. Error: {str(e)}. Trace: {stack_trace}"
+            await self._log_error(error_msg)
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to process schema analysis: {str(e)}",
@@ -61,77 +83,98 @@ class DatabaseSchemaUseCase:
             with open(output_file, "w") as file:
                 json.dump(endpoints_data, file, indent=2)
 
-            print(
-                f"Updated JSON with schema analysis and mock data status saved to {output_file}"
-            )
-
             return endpoints_data
 
-        except FileNotFoundError:
-            print(f"File not found: {json_file_path}")
+        except FileNotFoundError as e:
+            error_msg = f"File not found in DatabaseSchemaUseCase._process_json_file: {json_file_path}. Error: {str(e)}"
+            await self._log_error(error_msg)
+            raise
+        except json.JSONDecodeError as e:
+            error_msg = f"Invalid JSON format in DatabaseSchemaUseCase._process_json_file: {json_file_path}. Error: {str(e)}"
+            await self._log_error(error_msg)
+            raise
+        except IOError as e:
+            error_msg = f"IO Error in DatabaseSchemaUseCase._process_json_file while processing: {json_file_path}. Error: {str(e)}"
+            await self._log_error(error_msg)
             raise HTTPException(
-                status_code=404,
-                detail=f"Input file not found: {json_file_path}",
-            )
-        except json.JSONDecodeError:
-            print(f"Invalid JSON format in file: {json_file_path}")
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid JSON format in {json_file_path}",
+                status_code=500,
+                detail=f"IO Error when processing file: {str(e)}",
             )
         except Exception as e:
-            print(f"Error processing file {json_file_path}: {str(e)}")
-            return {
-                "error": f"An unexpected error occurred: {str(e)}",
-                "file_path": json_file_path,
-            }
+            stack_trace = traceback.format_exc()
+            error_msg = f"Unexpected error in DatabaseSchemaUseCase._process_json_file for file: {json_file_path}. Error: {str(e)}. Trace: {stack_trace}"
+            await self._log_error(error_msg)
+            raise
 
     async def _process_endpoint(
         self, endpoint: Dict[str, Any], repo_path: str
     ) -> Dict[str, Any]:
         """Process a single endpoint: analyze schema and generate/insert mock data"""
-        # Analyze the endpoint to identify the schema
-        schema_analysis = await self.helper.analyze_endpoint_schema(endpoint)
+        try:
+            # Analyze the endpoint to identify the schema
+            schema_analysis = await self.helper.analyze_endpoint_schema(endpoint)
 
-        # Create a copy of schema_analysis without samples for storing in the endpoint
-        schema_analysis_for_json = {
-            key: value
-            for key, value in schema_analysis.items()
-            if key != "samples"
-        }
+            # Create a copy of schema_analysis without samples for storing in the endpoint
+            schema_analysis_for_json = {
+                key: value
+                for key, value in schema_analysis.items()
+                if key != "samples"
+            }
 
-        db_name = os.path.basename(repo_path.rstrip("/"))
+            db_name = os.path.basename(repo_path.rstrip("/"))
 
-        # Update endpoint data with cleaned schema analysis (without samples)
-        endpoint["database_schema"] = schema_analysis_for_json
-        endpoint["database_schema"]["db_name"] = db_name
+            # Update endpoint data with cleaned schema analysis (without samples)
+            endpoint["database_schema"] = schema_analysis_for_json
+            endpoint["database_schema"]["db_name"] = db_name
 
-        # If schema analysis was successful, generate and insert mock data
-        if schema_analysis and not schema_analysis.get("error"):
-            collection_name = schema_analysis.get(
-                "collection_name", "unknown_collection"
-            )
-
-            # Generate mock data using the original schema_analysis with samples
-            mock_data_response = await self.helper.generate_mock_data(
-                schema_analysis, num_records=10
-            )
-            mock_data_list = mock_data_response.get("data", [])
-
-            if mock_data_list:
-                # Insert mock data into MongoDB
-                insertion_success = await self.helper.insert_to_mongodb_async(
-                    repo_path, collection_name, mock_data_list
+            # If schema analysis was successful, generate and insert mock data
+            if schema_analysis and not schema_analysis.get("error"):
+                collection_name = schema_analysis.get(
+                    "collection_name", "unknown_collection"
                 )
-                if insertion_success:
-                    print(f"Mock data inserted for {collection_name}")
-                else:
-                    print(f"Mock data insertion failed for {collection_name}")
-            else:
-                print(f"No mock data generated for {collection_name}")
-        else:
-            print(
-                f"Skipping mock data generation for endpoint {endpoint.get('endpointName')} due to schema analysis error or empty result."
-            )
 
-        return endpoint
+                # Generate mock data using the original schema_analysis with samples
+                mock_data_response = await self.helper.generate_mock_data(
+                    schema_analysis, num_records=10
+                )
+                mock_data_list = mock_data_response.get("data", [])
+
+                if mock_data_list:
+                    # Insert mock data into MongoDB
+                    insertion_success = await self.helper.insert_to_mongodb_async(
+                        repo_path, collection_name, mock_data_list
+                    )
+                    if not insertion_success:
+                        error_msg = f"Mock data insertion failed for collection {collection_name} in DatabaseSchemaUseCase._process_endpoint"
+                        await self._log_error(error_msg)
+                else:
+                    error_msg = f"No mock data generated for collection {collection_name} in DatabaseSchemaUseCase._process_endpoint"
+                    await self._log_error(error_msg)
+            else:
+                endpoint_name = endpoint.get('endpointName', 'unknown_endpoint')
+                error_msg = f"Skipping mock data generation in DatabaseSchemaUseCase._process_endpoint for endpoint {endpoint_name} due to schema analysis error or empty result"
+                await self._log_error(error_msg)
+
+            return endpoint
+        except Exception as e:
+            endpoint_name = endpoint.get('endpointName', 'unknown_endpoint')
+            stack_trace = traceback.format_exc()
+            error_msg = f"Error in DatabaseSchemaUseCase._process_endpoint for endpoint {endpoint_name}, repo_path {repo_path}. Error: {str(e)}. Trace: {stack_trace}"
+            await self._log_error(error_msg)
+            
+            # Add error information to the endpoint rather than failing completely
+            endpoint["database_schema"] = {
+                "error": True,
+                "error_message": f"Failed to process endpoint: {str(e)}"
+            }
+            return endpoint
+
+    async def _log_error(self, error_message: str) -> None:
+        """Log error to MongoDB using ErrorRepo"""
+        try:
+            error = Error(error_message=error_message)
+            await self.error_repo.insert_error(error)
+        except Exception as e:
+            # If logging to MongoDB fails, we don't want to throw another exception
+            # This would be handled by the monitoring system in production
+            pass

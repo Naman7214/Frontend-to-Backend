@@ -11,7 +11,7 @@ class CloneHelper:
         # Base directory for all cloned projects
         self.projects_dir = "Projects"
 
-    def validate_github_url(self, github_url: str) -> bool:
+    async def validate_github_url(self, github_url: str) -> bool:
         """
         Validate if the provided URL is a valid GitHub repository URL.
 
@@ -35,7 +35,7 @@ class CloneHelper:
             detail="Invalid GitHub URL format. URL should be in the format: 'https://github.com/username/repo' or 'git@github.com:username/repo'",
         )
 
-    def generate_project_uuid(self) -> str:
+    async def generate_project_uuid(self) -> str:
         """
         Generate a unique UUID for the project directory.
 
@@ -44,7 +44,7 @@ class CloneHelper:
         """
         return str(uuid.uuid4())
 
-    def get_repo_name_from_url(self, github_url: str) -> str:
+    async def get_repo_name_from_url(self, github_url: str) -> str:
         """
         Extract repository name from GitHub URL.
 
@@ -69,7 +69,7 @@ class CloneHelper:
 
         return repo_name
 
-    def create_project_directory(self, project_uuid: str) -> str:
+    async def create_project_directory(self, project_uuid: str) -> str:
         """
         Create a project directory with the given UUID.
 
@@ -103,7 +103,7 @@ class CloneHelper:
         """
         try:
             # Get repo name from URL to create the subdirectory
-            repo_name = self.get_repo_name_from_url(github_url)
+            repo_name = await self.get_repo_name_from_url(github_url)
 
             # Create the full destination path: Projects/uuid/repo_name
             destination_path = os.path.join(project_dir, repo_name)
@@ -182,5 +182,5 @@ class CloneHelper:
 
         except Exception as e:
             raise HTTPException(
-                status_code=500, detail=f"Failed to clone repository: {str(e)}"
+                status_code=500, detail=f"Failed to clone repository in clone_usecase.helper: {str(e)}"
             )

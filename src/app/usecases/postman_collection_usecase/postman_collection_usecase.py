@@ -7,14 +7,14 @@ class PostmanCollectionUseCase:
         pass
 
     async def convert_to_postman_collection(
-        self, spec_file_path: str, output_file_path: str
+        self, spec_file_path: str, output_file_path: str, repo_name: str
     ):
         with open(spec_file_path, "r") as f:
             spec = json.load(f)
 
         collection = {
             "info": {
-                "name": "Game API Collection",
+                "name": repo_name,
                 "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
                 "_postman_id": "auto-generated-id",
             },
@@ -76,7 +76,7 @@ class PostmanCollectionUseCase:
         with open(output_file_path, "w") as f:
             json.dump(collection, f, indent=2)
 
-    async def execute(self, file_path: str):
+    async def execute(self, file_path: str, repo_name: str):
 
         # Get the directory of the input file
         input_dir = os.path.dirname(file_path)
@@ -85,6 +85,6 @@ class PostmanCollectionUseCase:
         output_file_path = os.path.join(input_dir, "postman_collection.json")
 
         # Call the function to convert and save the collection
-        await self.convert_to_postman_collection(file_path, output_file_path)
+        await self.convert_to_postman_collection(file_path, output_file_path, repo_name)
 
         return output_file_path
