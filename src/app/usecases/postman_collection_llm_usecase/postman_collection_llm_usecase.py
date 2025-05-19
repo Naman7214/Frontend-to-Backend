@@ -56,14 +56,12 @@ class PostmanCollectionUsecase:
         user_prompt = POSTMAN_COLLECTION_USER_PROMPT.format(
             filtered_data=filtered_data
         )
-        # print(user_prompt)
         response = await self.anthropic_service.completions(
             system_prompt=POSTMAN_COLLECTION_SYSTEM_PROMPT,
             user_prompt=user_prompt,
         )
 
         response = parse_response(response)
-        # print(response)
 
         # Get the directory of the input file
         input_dir = os.path.dirname(file_path)
@@ -72,6 +70,6 @@ class PostmanCollectionUsecase:
         output_file_path = os.path.join(input_dir, "postman_collection.json")
 
         with open(output_file_path, "w") as f:
-            json.dump(response, f, indent=4)
+            json.dump(response['postman_collection'], f, indent=4)
 
         return response["postman_collection"]

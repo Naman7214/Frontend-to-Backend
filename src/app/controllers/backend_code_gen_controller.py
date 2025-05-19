@@ -199,6 +199,7 @@ class BackendCodeGenController:
                 "status",
                 "Generating backend code and Postman collection in parallel...",
             )
+
             input_path = f"Projects/{project_uuid}/sorted_endpoints.json"
 
             code_gen_task = asyncio.create_task(
@@ -206,14 +207,14 @@ class BackendCodeGenController:
                     input_path=input_path, project_name=repo_name
                 )
             )
-
-            postman_task = asyncio.create_task(
-                self.postman_collection_llm_usecase.execute(input_path)
-            )
-
-            # Wait for both tasks to complete
             final_code_path = await code_gen_task
             yield ("status", "Backend code generated successfully")
+
+            postman_input_path = f"Projects/{project_uuid}/final_code.json"
+            postman_task = asyncio.create_task(
+                self.postman_collection_llm_usecase.execute(postman_input_path)
+            )
+            
 
             postman_result = await postman_task
             yield ("status", "Postman collection generated successfully")

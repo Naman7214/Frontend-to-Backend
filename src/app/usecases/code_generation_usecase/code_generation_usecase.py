@@ -143,6 +143,8 @@ class CodeGenerationUseCase:
                 ):
                     if chunk_type == "text_delta":
                         response_text += chunk_content
+                        print(chunk_content, end="", flush=True)
+
 
                 if not response_text:
                     error_msg = "Error in CodeGenerationUseCase.execute: Empty response from Anthropic API"

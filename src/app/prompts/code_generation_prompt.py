@@ -51,10 +51,7 @@ Return a valid JSON array of objects with the following structure:
   ...
 ]
 ```
-## ADDITIONAL INSTRUCTIONS
--Ensure all files use consistent coding style and properly reference each other.
--Do not include any explanations or markdown in your response, only the JSON array.
--Ensure to use the same db_name mentioned in the endpoints.
--Stick to the given project structure, endpoints (including name, query params, payloads, and responses), and architecture requirements.
--Don't add any extra prefix such as /api or etc in given endpoints.
+Ensure all files use consistent coding style and properly reference each other.
+Do not include any explanations or markdown in your response, only the JSON array.
+Ensure to use the same db_name mentioned in the endpoints.
 """
