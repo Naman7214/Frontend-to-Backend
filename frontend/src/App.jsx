@@ -355,65 +355,108 @@ function App() {
         </div>
 
         <div className="side-by-side-container">
-          {endpoints.length > 0 && (
-            <div className="endpoints-container">
-              <div className="endpoints-header">
-                <FaServer className="endpoints-icon" />
-                <h2>API Endpoints Generated</h2>
-                <div className="endpoints-count">{endpoints.length}</div>
-              </div>
+          {loading ? (
+            <>
+              <div className="left-column">
+                <div className="generation-progress">
+                  <div className="progress-header">
+                    <h2>Generation Progress</h2>
+                  </div>
 
-              <div className="endpoints-table-container">
-                <div className="endpoints-table-header">
-                  <div className="method-column">METHOD</div>
-                  <div className="path-column">ENDPOINT</div>
-                  <div className="description-column">DESCRIPTION</div>
-                </div>
-                <div className="endpoints-list">
-                  {endpoints.map((endpoint, index) => (
-                    <div key={index} className="endpoint-item">
-                      <div className="method-column">
-                        <span className={`method ${(endpoint.method || 'get').toLowerCase()}`}>
-                          {endpoint.method || 'GET'}
-                        </span>
-                      </div>
-                      <div className="path-column">
-                        <code className="path">{endpoint.path || 'Unknown path'}</code>
-                      </div>
-                      <div className="description-column">
-                        <p>{endpoint.description || 'No description available'}</p>
-                      </div>
-                    </div>
-                  ))}
+                  <div className="progress-steps">
+                    {processingSteps.map(step => (
+                      // Only show steps that are active or completed
+                      (step.active || step.completed) && (
+                        <div key={step.id} className={`progress-step ${step.active ? 'active' : ''} ${step.completed ? 'completed' : ''}`}>
+                          {step.completed ? (
+                            <FaCheckCircle className="step-icon completed" />
+                          ) : step.active ? (
+                            <FaSpinner className="step-icon spinning" />
+                          ) : (
+                            <div className="step-icon empty" />
+                          )}
+                          <span className="step-label">{step.label}</span>
+                        </div>
+                      )
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {loading && (
-            <div className="generation-progress">
-              <div className="progress-header">
-                <h2>Generation Progress</h2>
-              </div>
-
-              <div className="progress-steps">
-                {processingSteps.map(step => (
-                  // Only show steps that are active or completed
-                  (step.active || step.completed) && (
-                    <div key={step.id} className={`progress-step ${step.active ? 'active' : ''} ${step.completed ? 'completed' : ''}`}>
-                      {step.completed ? (
-                        <FaCheckCircle className="step-icon completed" />
-                      ) : step.active ? (
-                        <FaSpinner className="step-icon spinning" />
-                      ) : (
-                        <div className="step-icon empty" />
-                      )}
-                      <span className="step-label">{step.label}</span>
+              
+              {endpoints.length > 0 && (
+                <div className="right-column">
+                  <div className="endpoints-container">
+                    <div className="endpoints-header">
+                      <FaServer className="endpoints-icon" />
+                      <h2>API Endpoints Generated</h2>
+                      <div className="endpoints-count">{endpoints.length}</div>
                     </div>
-                  )
-                ))}
+
+                    <div className="endpoints-table-container">
+                      <div className="endpoints-table-header">
+                        <div className="method-column">METHOD</div>
+                        <div className="path-column">ENDPOINT</div>
+                        <div className="description-column">DESCRIPTION</div>
+                      </div>
+                      <div className="endpoints-list">
+                        {endpoints.map((endpoint, index) => (
+                          <div key={index} className="endpoint-item">
+                            <div className="method-column">
+                              <span className={`method ${(endpoint.method || 'get').toLowerCase()}`}>
+                                {endpoint.method || 'GET'}
+                              </span>
+                            </div>
+                            <div className="path-column">
+                              <code className="path">{endpoint.path || 'Unknown path'}</code>
+                            </div>
+                            <div className="description-column">
+                              <p>{endpoint.description || 'No description available'}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            endpoints.length > 0 && (
+              <div className="full-width-column">
+                <div className="endpoints-container">
+                  <div className="endpoints-header">
+                    <FaServer className="endpoints-icon" />
+                    <h2>API Endpoints Generated</h2>
+                    <div className="endpoints-count">{endpoints.length}</div>
+                  </div>
+
+                  <div className="endpoints-table-container">
+                    <div className="endpoints-table-header">
+                      <div className="method-column">METHOD</div>
+                      <div className="path-column">ENDPOINT</div>
+                      <div className="description-column">DESCRIPTION</div>
+                    </div>
+                    <div className="endpoints-list">
+                      {endpoints.map((endpoint, index) => (
+                        <div key={index} className="endpoint-item">
+                          <div className="method-column">
+                            <span className={`method ${(endpoint.method || 'get').toLowerCase()}`}>
+                              {endpoint.method || 'GET'}
+                            </span>
+                          </div>
+                          <div className="path-column">
+                            <code className="path">{endpoint.path || 'Unknown path'}</code>
+                          </div>
+                          <div className="description-column">
+                            <p>{endpoint.description || 'No description available'}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )
           )}
         </div>
 
@@ -439,7 +482,6 @@ function App() {
               <div className="result-details">
                 <p><strong>Project:</strong> {projectData.repo_name}</p>
                 <p><strong>Location:</strong> <code>{projectData.zip_path}</code></p>
-                <p className="note">Direct download from browser coming soon!</p>
               </div>
             </div>
             <button
