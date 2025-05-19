@@ -85,6 +85,8 @@ class PostmanCollectionUseCase:
         output_file_path = os.path.join(input_dir, "postman_collection.json")
 
         # Call the function to convert and save the collection
-        await self.convert_to_postman_collection(file_path, output_file_path, repo_name)
+        await self.convert_to_postman_collection(
+            file_path, output_file_path, repo_name
+        )
 
         return output_file_path

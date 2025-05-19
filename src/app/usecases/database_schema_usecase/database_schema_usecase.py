@@ -13,9 +13,9 @@ from src.app.usecases.database_schema_usecase.helper import DatabaseSchemaHelper
 
 class DatabaseSchemaUseCase:
     def __init__(
-        self, 
+        self,
         helper: DatabaseSchemaHelper = Depends(),
-        error_repo: ErrorRepo = Depends()
+        error_repo: ErrorRepo = Depends(),
     ):
         self.helper = helper
         self.error_repo = error_repo
@@ -112,7 +112,9 @@ class DatabaseSchemaUseCase:
         """Process a single endpoint: analyze schema and generate/insert mock data"""
         try:
             # Analyze the endpoint to identify the schema
-            schema_analysis = await self.helper.analyze_endpoint_schema(endpoint)
+            schema_analysis = await self.helper.analyze_endpoint_schema(
+                endpoint
+            )
 
             # Create a copy of schema_analysis without samples for storing in the endpoint
             schema_analysis_for_json = {
@@ -141,8 +143,10 @@ class DatabaseSchemaUseCase:
 
                 if mock_data_list:
                     # Insert mock data into MongoDB
-                    insertion_success = await self.helper.insert_to_mongodb_async(
-                        repo_path, collection_name, mock_data_list
+                    insertion_success = (
+                        await self.helper.insert_to_mongodb_async(
+                            repo_path, collection_name, mock_data_list
+                        )
                     )
                     if not insertion_success:
                         error_msg = f"Mock data insertion failed for collection {collection_name} in DatabaseSchemaUseCase._process_endpoint"
@@ -151,21 +155,21 @@ class DatabaseSchemaUseCase:
                     error_msg = f"No mock data generated for collection {collection_name} in DatabaseSchemaUseCase._process_endpoint"
                     await self._log_error(error_msg)
             else:
-                endpoint_name = endpoint.get('endpointName', 'unknown_endpoint')
+                endpoint_name = endpoint.get("endpointName", "unknown_endpoint")
                 error_msg = f"Skipping mock data generation in DatabaseSchemaUseCase._process_endpoint for endpoint {endpoint_name} due to schema analysis error or empty result"
                 await self._log_error(error_msg)
 
             return endpoint
         except Exception as e:
-            endpoint_name = endpoint.get('endpointName', 'unknown_endpoint')
+            endpoint_name = endpoint.get("endpointName", "unknown_endpoint")
             stack_trace = traceback.format_exc()
             error_msg = f"Error in DatabaseSchemaUseCase._process_endpoint for endpoint {endpoint_name}, repo_path {repo_path}. Error: {str(e)}. Trace: {stack_trace}"
             await self._log_error(error_msg)
-            
+
             # Add error information to the endpoint rather than failing completely
             endpoint["database_schema"] = {
                 "error": True,
-                "error_message": f"Failed to process endpoint: {str(e)}"
+                "error_message": f"Failed to process endpoint: {str(e)}",
             }
             return endpoint
 

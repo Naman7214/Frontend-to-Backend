@@ -47,7 +47,9 @@ class DatabaseSchemaHelper:
         """
         try:
             return {
-                "collection_name": endpoint_data.get("collection_name", "unknown"),
+                "collection_name": endpoint_data.get(
+                    "collection_name", "unknown"
+                ),
                 "schema": endpoint_data.get("schema", {}),
                 "samples": endpoint_data.get("samples", {}),
             }
@@ -68,7 +70,7 @@ class DatabaseSchemaHelper:
     ) -> Dict[str, Any]:
         """Analyze endpoint schema using OpenAI"""
         endpoint_name = endpoint_data.get("endpointName", "Unknown")
-        
+
         async with self.semaphore:  # Limit concurrent API calls
             try:
                 user_prompt = self.database_schema_user_prompt.format(
@@ -132,7 +134,7 @@ class DatabaseSchemaHelper:
         Call external API to generate mock data based on the schema.
         """
         collection_name = schema_info.get("collection_name", "unknown")
-        
+
         async with self.semaphore:  # Limit concurrent API calls
             try:
                 # Add await and expect direct JSON response or exception
@@ -144,15 +146,18 @@ class DatabaseSchemaHelper:
                 if not mock_data or not mock_data.get("data"):
                     error_msg = f"Error in DatabaseSchemaHelper.generate_mock_data: No mock data returned from API for collection {collection_name}"
                     await self._log_error(error_msg)
-                    return {"data": [], "error": "No mock data returned from API"}
-                
+                    return {
+                        "data": [],
+                        "error": "No mock data returned from API",
+                    }
+
                 return mock_data
 
             except HTTPException as he:
                 error_msg = f"Error in DatabaseSchemaHelper.generate_mock_data: HTTP error while generating mock data for {collection_name}. Status: {he.status_code}, Detail: {he.detail}"
                 await self._log_error(error_msg)
                 return {"data": [], "error": f"HTTP error: {he.detail}"}
-                
+
             except Exception as e:
                 stack_trace = traceback.format_exc()
                 error_msg = f"Error in DatabaseSchemaHelper.generate_mock_data for collection {collection_name}: {str(e)}. Trace: {stack_trace}"
@@ -193,7 +198,7 @@ class DatabaseSchemaHelper:
             collection = self.db_repo.create_collection(db, collection_name)
             inserted_ids = self.db_repo.insert_many(collection, data)
             return True
-            
+
         except Exception as e:
             stack_trace = traceback.format_exc()
             error_msg = f"Error in DatabaseSchemaHelper.insert_to_mongodb for collection '{collection_name}' in database for repo '{repo_path}': {str(e)}. Trace: {stack_trace}"
@@ -239,7 +244,7 @@ class DatabaseSchemaHelper:
             error_msg = f"Error in DatabaseSchemaHelper.batch_process_schemas: Invalid endpoints data provided. Expected list, got {type(endpoints)}"
             await self._log_error(error_msg)
             return []
-            
+
         try:
             tasks = []
             for endpoint in endpoints:
@@ -262,7 +267,7 @@ class DatabaseSchemaHelper:
         Helper method for batch processing
         """
         endpoint_name = endpoint.get("endpointName", "unknown_endpoint")
-        
+
         try:
             # Analyze schema
             schema = await self.analyze_endpoint_schema(endpoint)
@@ -296,14 +301,14 @@ class DatabaseSchemaHelper:
             error_msg = f"Error in DatabaseSchemaHelper._process_single_endpoint for endpoint {endpoint_name}, repo_path {repo_path}: {str(e)}. Trace: {stack_trace}"
             await self._log_error(error_msg)
             return {
-                **endpoint, 
+                **endpoint,
                 "schema_analysis": {
                     "error": True,
                     "error_message": f"Failed to process endpoint: {str(e)}",
                     "collection_name": "unknown",
                     "schema": {},
-                    "samples": {}
-                }
+                    "samples": {},
+                },
             }
 
     async def _log_error(self, error_message: str) -> None:

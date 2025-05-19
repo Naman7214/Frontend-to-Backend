@@ -18,6 +18,9 @@ from src.app.usecases.database_schema_usecase.database_schema_usecase import (
     DatabaseSchemaUseCase,
 )
 from src.app.usecases.endpoint_usecase.endpoint_usecase import EndpointUseCase
+from src.app.usecases.postman_collection_llm_usecase.postman_collection_llm_usecase import (
+    PostmanCollectionUsecase,
+)
 from src.app.usecases.postman_collection_usecase.postman_collection_usecase import (
     PostmanCollectionUseCase,
 )
@@ -49,6 +52,9 @@ class BackendCodeGenController:
         code_constructor_usecase: CodeConstructorUseCase = Depends(
             CodeConstructorUseCase
         ),
+        postman_collection_llm_usecase: PostmanCollectionUsecase = Depends(
+            PostmanCollectionUsecase
+        ),
     ):
         self.clone_usecase = clone_usecase
         self.endpoint_usecase = endpoint_usecase
@@ -58,11 +64,16 @@ class BackendCodeGenController:
         self.postman_collection_usecase = postman_collection_usecase
         self.error_repository = error_repository
         self.code_constructor_usecase = code_constructor_usecase
+        self.postman_collection_llm_usecase = postman_collection_llm_usecase
 
     async def code_gen(self, url: str):
         """
         Extract nodes from url and generate codebase.
         """
+        # file_path = "Projects/406ea605-ca55-41f9-b798-c1fcdd340950/final_code.json"
+        # return await self.postman_collection_llm_usecase.execute(file_path)
+        # Clone repository
+
         result = await self.clone_usecase.execute(url)
         repo_path = result["repo_path"]
         project_uuid = result["project_uuid"]
@@ -104,9 +115,7 @@ class BackendCodeGenController:
         )
 
         postman_task = asyncio.create_task(
-            self.postman_collection_usecase.execute(
-                output_path_with_sample_payload, repo_name
-            )
+            self.postman_collection_llm_usecase.execute(input_path)
         )
 
         # Wait for both tasks to complete
@@ -199,9 +208,7 @@ class BackendCodeGenController:
             )
 
             postman_task = asyncio.create_task(
-                self.postman_collection_usecase.execute(
-                    output_path_with_sample_payload, repo_name
-                )
+                self.postman_collection_llm_usecase.execute(input_path)
             )
 
             # Wait for both tasks to complete

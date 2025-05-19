@@ -182,5 +182,6 @@ class CloneHelper:
 
         except Exception as e:
             raise HTTPException(
-                status_code=500, detail=f"Failed to clone repository in clone_usecase.helper: {str(e)}"
+                status_code=500,
+                detail=f"Failed to clone repository in clone_usecase.helper: {str(e)}",
             )

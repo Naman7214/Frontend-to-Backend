@@ -1,7 +1,7 @@
 import json
 import os
 import traceback
-from typing import Any, Dict, Tuple, List
+from typing import Any, Dict, List, Tuple
 
 from fastapi import Depends, HTTPException
 
@@ -12,9 +12,9 @@ from src.app.usecases.endpoint_usecase.helper import EndpointHelper
 
 class EndpointUseCase:
     def __init__(
-        self, 
+        self,
         endpoint_helper: EndpointHelper = Depends(EndpointHelper),
-        error_repo: ErrorRepo = Depends(ErrorRepo)
+        error_repo: ErrorRepo = Depends(ErrorRepo),
     ) -> None:
         self.endpoint_helper = endpoint_helper
         self.error_repo = error_repo
@@ -71,7 +71,8 @@ class EndpointUseCase:
                 try:
                     # Ensure the directory exists
                     os.makedirs(
-                        os.path.dirname(os.path.abspath(output_path)), exist_ok=True
+                        os.path.dirname(os.path.abspath(output_path)),
+                        exist_ok=True,
                     )
 
                     # Create path for sample payload file by removing .json extension if present
@@ -106,7 +107,9 @@ class EndpointUseCase:
                         json.dump(final_result, f, indent=2)
 
                     if verbose:
-                        print(f"Saved endpoints to {output_with_payload_sample_path}")
+                        print(
+                            f"Saved endpoints to {output_with_payload_sample_path}"
+                        )
                         print(f"Saved endpoints to {output_path}")
 
                     # Add the output path to the result
@@ -124,20 +127,20 @@ class EndpointUseCase:
                     error_message = f"File operation error in EndpointUseCase.execute when saving output: {str(file_ex)}"
                     error = Error(error_message)
                     await self.error_repo.insert_error(error)
-                    
+
                     raise HTTPException(
                         status_code=500,
-                        detail=f"Failed to save endpoint analysis results: {str(file_ex)}"
+                        detail=f"Failed to save endpoint analysis results: {str(file_ex)}",
                     )
                 except Exception as output_ex:
                     # Handle any other errors during output saving
                     error_message = f"Error in EndpointUseCase.execute when processing output: {str(output_ex)}"
                     error = Error(error_message)
                     await self.error_repo.insert_error(error)
-                    
+
                     raise HTTPException(
                         status_code=500,
-                        detail=f"Failed to process endpoint analysis results: {str(output_ex)}"
+                        detail=f"Failed to process endpoint analysis results: {str(output_ex)}",
                     )
 
             return (
@@ -145,52 +148,54 @@ class EndpointUseCase:
                 output_with_payload_sample_path,
                 simplified_endpoints,
             )
-            
+
         except HTTPException as http_ex:
             # Log the error to MongoDB and re-raise
             error_message = f"HTTP Exception in EndpointUseCase.execute: {http_ex.detail} - Status code: {http_ex.status_code}"
             error = Error(error_message)
             await self.error_repo.insert_error(error)
-            
+
             # Re-raise to be handled by the API layer
             raise
-            
+
         except ValueError as val_ex:
             # Handle validation errors
-            error_message = f"Validation error in EndpointUseCase.execute: {str(val_ex)}"
+            error_message = (
+                f"Validation error in EndpointUseCase.execute: {str(val_ex)}"
+            )
             error = Error(error_message)
             await self.error_repo.insert_error(error)
-            
+
             # Convert to HTTP exception with appropriate status code
             raise HTTPException(status_code=400, detail=str(val_ex))
-            
+
         except OSError as os_ex:
             # Handle file system errors
             error_message = f"File system error in EndpointUseCase.execute when accessing repo_path {repo_path}: {str(os_ex)}"
             error = Error(error_message)
             await self.error_repo.insert_error(error)
-            
+
             raise HTTPException(
-                status_code=500, 
-                detail=f"File system operation failed on repository path: {str(os_ex)}"
+                status_code=500,
+                detail=f"File system operation failed on repository path: {str(os_ex)}",
             )
-            
+
         except Exception as ex:
             # Get stack trace for detailed error logging
             stack_trace = traceback.format_exc()
-            
+
             # Create a detailed error message
             error_message = (
                 f"Unexpected error in EndpointUseCase.execute while processing repo_path {repo_path}: "
                 f"{str(ex)}\nStack trace: {stack_trace}"
             )
-            
+
             # Log the error to MongoDB
             error = Error(error_message)
             await self.error_repo.insert_error(error)
-            
+
             # Raise a generic HTTP exception with a user-friendly message
             raise HTTPException(
                 status_code=500,
-                detail="An unexpected error occurred while analyzing repository endpoints."
+                detail="An unexpected error occurred while analyzing repository endpoints.",
             )

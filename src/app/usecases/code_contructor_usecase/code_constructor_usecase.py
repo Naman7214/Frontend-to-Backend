@@ -3,7 +3,6 @@ import os
 import shutil
 import traceback
 import zipfile
-from typing import Dict, List, Optional
 
 from fastapi import Depends, HTTPException
 
@@ -12,10 +11,7 @@ from src.app.repositories.error_repository import ErrorRepo
 
 
 class CodeConstructorUseCase:
-    def __init__(
-        self,
-        error_repo: ErrorRepo = Depends()
-    ):
+    def __init__(self, error_repo: ErrorRepo = Depends()):
         self.error_repo = error_repo
 
     async def execute(self, code_json_path: str) -> str:
@@ -28,7 +24,7 @@ class CodeConstructorUseCase:
 
         Returns:
             str: Path to the created ZIP file containing the api directory
-            
+
         Raises:
             HTTPException: If any step in the process fails
         """
@@ -37,13 +33,18 @@ class CodeConstructorUseCase:
             if not code_json_path or not isinstance(code_json_path, str):
                 error_msg = f"Error in CodeConstructorUseCase.execute: Invalid JSON path provided: {code_json_path}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=400, detail="Invalid JSON path provided")
-                
+                raise HTTPException(
+                    status_code=400, detail="Invalid JSON path provided"
+                )
+
             if not os.path.exists(code_json_path):
                 error_msg = f"Error in CodeConstructorUseCase.execute: JSON file not found: {code_json_path}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=404, detail=f"JSON file not found: {code_json_path}")
-            
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"JSON file not found: {code_json_path}",
+                )
+
             # Get directory where the JSON file is located
             json_dir = os.path.dirname(code_json_path)
 
@@ -57,7 +58,10 @@ class CodeConstructorUseCase:
             except Exception as e:
                 error_msg = f"Error in CodeConstructorUseCase.execute: Failed to remove existing api directory: {api_dir}. Error: {str(e)}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=500, detail=f"Failed to remove existing api directory: {str(e)}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to remove existing api directory: {str(e)}",
+                )
 
             try:
                 # Create the api directory
@@ -65,25 +69,36 @@ class CodeConstructorUseCase:
             except Exception as e:
                 error_msg = f"Error in CodeConstructorUseCase.execute: Failed to create api directory: {api_dir}. Error: {str(e)}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=500, detail=f"Failed to create api directory: {str(e)}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to create api directory: {str(e)}",
+                )
 
             # Read the JSON file
             try:
                 with open(code_json_path, "r") as file:
                     files_data = json.load(file)
-                    
+
                 if not isinstance(files_data, list):
                     error_msg = f"Error in CodeConstructorUseCase.execute: Invalid JSON format in {code_json_path}. Expected a list of file objects."
                     await self._log_error(error_msg)
-                    raise HTTPException(status_code=400, detail="Invalid JSON format. Expected a list of file objects.")
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Invalid JSON format. Expected a list of file objects.",
+                    )
             except json.JSONDecodeError as je:
                 error_msg = f"Error in CodeConstructorUseCase.execute: Invalid JSON format in {code_json_path}. Error: {str(je)}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=400, detail=f"Invalid JSON format: {str(je)}")
+                raise HTTPException(
+                    status_code=400, detail=f"Invalid JSON format: {str(je)}"
+                )
             except Exception as e:
                 error_msg = f"Error in CodeConstructorUseCase.execute: Failed to read JSON file: {code_json_path}. Error: {str(e)}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=500, detail=f"Failed to read JSON file: {str(e)}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to read JSON file: {str(e)}",
+                )
 
             # Create each file and its parent directories
             file_count = 0
@@ -105,17 +120,22 @@ class CodeConstructorUseCase:
                     # Write the file content
                     with open(full_path, "w") as f:
                         f.write(code)
-                        
+
                     file_count += 1
-                
+
                 if file_count == 0:
                     error_msg = f"Error in CodeConstructorUseCase.execute: No valid files found in JSON: {code_json_path}"
                     await self._log_error(error_msg)
-                    raise HTTPException(status_code=400, detail="No valid files found in JSON")
+                    raise HTTPException(
+                        status_code=400, detail="No valid files found in JSON"
+                    )
             except Exception as e:
                 error_msg = f"Error in CodeConstructorUseCase.execute: Failed to create code files. Error: {str(e)}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=500, detail=f"Failed to create code files: {str(e)}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to create code files: {str(e)}",
+                )
 
             # Create ZIP file of the api directory
             zip_path = os.path.join(json_dir, "api.zip")
@@ -126,7 +146,9 @@ class CodeConstructorUseCase:
                     os.remove(zip_path)
 
                 # Create the zip file
-                with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+                with zipfile.ZipFile(
+                    zip_path, "w", zipfile.ZIP_DEFLATED
+                ) as zipf:
                     # Walk through all files and directories in the api directory
                     for root, dirs, files in os.walk(api_dir):
                         for file in files:
@@ -145,20 +167,27 @@ class CodeConstructorUseCase:
                     )
                     if os.path.exists(postman_collection_path):
                         # Add the postman collection to the root of the zip
-                        zipf.write(postman_collection_path, "postman_collection.json")
-                
+                        zipf.write(
+                            postman_collection_path, "postman_collection.json"
+                        )
+
                 # Verify the zip file was created
                 if not os.path.exists(zip_path):
                     error_msg = f"Error in CodeConstructorUseCase.execute: Failed to create zip file: {zip_path}"
                     await self._log_error(error_msg)
-                    raise HTTPException(status_code=500, detail="Failed to create zip file")
+                    raise HTTPException(
+                        status_code=500, detail="Failed to create zip file"
+                    )
             except Exception as e:
                 error_msg = f"Error in CodeConstructorUseCase.execute: Failed to create zip file: {zip_path}. Error: {str(e)}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=500, detail=f"Failed to create zip file: {str(e)}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to create zip file: {str(e)}",
+                )
 
             return zip_path
-            
+
         except HTTPException:
             # Re-raise HTTPExceptions as they're already formatted properly
             raise
@@ -167,7 +196,10 @@ class CodeConstructorUseCase:
             stack_trace = traceback.format_exc()
             error_msg = f"Unexpected error in CodeConstructorUseCase.execute for file: {code_json_path}. Error: {str(e)}. Trace: {stack_trace}"
             await self._log_error(error_msg)
-            raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"An unexpected error occurred: {str(e)}",
+            )
 
     async def _log_error(self, error_message: str) -> None:
         """Log error to MongoDB using ErrorRepo"""

@@ -16,9 +16,9 @@ from src.app.services.openai_service import OpenAIService
 
 class EndpointHelper:
     def __init__(
-        self, 
+        self,
         openai_service: OpenAIService = Depends(OpenAIService),
-        error_repo: ErrorRepo = Depends(ErrorRepo)
+        error_repo: ErrorRepo = Depends(ErrorRepo),
     ) -> None:
         self.openai_service = openai_service
         self.error_repo = error_repo
@@ -56,7 +56,7 @@ class EndpointHelper:
                     # Log subprocess error but continue with fallback
                     error_msg = f"EndpointHelper.find_files_with_grep: Subprocess grep failed for pattern '{pattern}': {str(e)}"
                     await self.error_repo.insert_error(Error(error_msg))
-                    
+
                     # Fallback to Python-based search (async version)
                     for ext in extensions:
                         for file_path in glob.glob(
@@ -73,7 +73,9 @@ class EndpointHelper:
                             except Exception as file_error:
                                 # Log file reading errors
                                 error_msg = f"EndpointHelper.find_files_with_grep: Failed to read file {file_path}: {str(file_error)}"
-                                await self.error_repo.insert_error(Error(error_msg))
+                                await self.error_repo.insert_error(
+                                    Error(error_msg)
+                                )
             except Exception as outer_e:
                 error_msg = f"EndpointHelper.find_files_with_grep: Critical error searching for pattern '{pattern}': {str(outer_e)}\n{traceback.format_exc()}"
                 await self.error_repo.insert_error(Error(error_msg))
@@ -218,7 +220,7 @@ class EndpointHelper:
                     unique_files.append(file)
 
             return unique_files
-            
+
         except Exception as e:
             error_msg = f"EndpointHelper.find_react_files: Critical error finding React files: {str(e)}\n{traceback.format_exc()}"
             await self.error_repo.insert_error(Error(error_msg))
@@ -235,7 +237,9 @@ class EndpointHelper:
             await self.error_repo.insert_error(Error(error_msg))
             # Try with a different encoding as fallback
             try:
-                async with aiofiles.open(file_path, "r", encoding="latin-1") as f:
+                async with aiofiles.open(
+                    file_path, "r", encoding="latin-1"
+                ) as f:
                     return await f.read()
             except Exception as fallback_error:
                 error_msg = f"EndpointHelper.read_file: Fallback encoding also failed for {file_path}: {str(fallback_error)}"
@@ -313,10 +317,14 @@ class EndpointHelper:
                         if len(new_endpoint.get("description", "")) > len(
                             existing.get("description", "")
                         ):
-                            existing["description"] = new_endpoint["description"]
+                            existing["description"] = new_endpoint[
+                                "description"
+                            ]
 
                         # Merge or update payload fields
-                        for field, details in new_endpoint.get("payload", {}).items():
+                        for field, details in new_endpoint.get(
+                            "payload", {}
+                        ).items():
                             if "payload" not in existing:
                                 existing["payload"] = {}
                             existing["payload"][field] = details
@@ -330,7 +338,9 @@ class EndpointHelper:
                             existing["queryParams"][param] = details
 
                         # Merge or update response fields
-                        for field, details in new_endpoint.get("response", {}).items():
+                        for field, details in new_endpoint.get(
+                            "response", {}
+                        ).items():
                             if "response" not in existing:
                                 existing["response"] = {}
                             existing["response"][field] = details
@@ -374,7 +384,7 @@ class EndpointHelper:
                     continue
 
             return existing_endpoints
-            
+
         except Exception as e:
             # Critical error in endpoint list update
             # Return original list as fallback
@@ -405,7 +415,9 @@ class EndpointHelper:
             if existing_endpoints and len(existing_endpoints) > 0:
                 # Format existing endpoints for the prompt
                 try:
-                    existing_endpoints_json = json.dumps(existing_endpoints, indent=2)
+                    existing_endpoints_json = json.dumps(
+                        existing_endpoints, indent=2
+                    )
                 except Exception as json_error:
                     error_msg = f"EndpointHelper.analyze_file_for_endpoints: Error serializing existing endpoints: {str(json_error)}"
                     await self.error_repo.insert_error(Error(error_msg))
@@ -485,7 +497,9 @@ class EndpointHelper:
             if api_files:
                 try:
                     # Call async version with await
-                    api_result = await self.find_react_files(root_dir, api_files=True)
+                    api_result = await self.find_react_files(
+                        root_dir, api_files=True
+                    )
                     react_files.extend(api_result)
                     file_type_desc.append("API-related files")
                 except Exception as api_error:
@@ -494,7 +508,9 @@ class EndpointHelper:
             elif all_files:
                 try:
                     # Call async version with await
-                    all_result = await self.find_react_files(root_dir, all_files=True)
+                    all_result = await self.find_react_files(
+                        root_dir, all_files=True
+                    )
                     react_files.extend(all_result)
                     file_type_desc.append("React files")
                 except Exception as all_error:
@@ -515,7 +531,9 @@ class EndpointHelper:
             if react_hooks:
                 try:
                     # Call async version with await
-                    hook_files = await self.find_react_files(root_dir, react_hooks=True)
+                    hook_files = await self.find_react_files(
+                        root_dir, react_hooks=True
+                    )
                     react_files.extend(hook_files)
                     file_type_desc.append("hook-using files")
                 except Exception as hook_error:
@@ -526,7 +544,9 @@ class EndpointHelper:
             if auth_files:
                 try:
                     # Call async version with await
-                    auth_result = await self.find_react_files(root_dir, auth_files=True)
+                    auth_result = await self.find_react_files(
+                        root_dir, auth_files=True
+                    )
                     react_files.extend(auth_result)
                     file_type_desc.append("auth-related files")
                 except Exception as auth_error:
@@ -551,7 +571,9 @@ class EndpointHelper:
             all_endpoints = []
 
             # Process files concurrently in batches for better performance
-            batch_size = 1  # Process 1 file at a time for better error isolation
+            batch_size = (
+                1  # Process 1 file at a time for better error isolation
+            )
             for i in range(0, len(react_files), batch_size):
                 try:
                     batch = react_files[i : i + batch_size]
@@ -628,8 +650,12 @@ class EndpointHelper:
                     print(
                         f"  Description: {endpoint.get('description', 'No description')}"
                     )
-                    print(f"  Used in {len(endpoint.get('usedInFiles', []))} files")
-                    print(f"  Auth required: {endpoint.get('authRequired', False)}")
+                    print(
+                        f"  Used in {len(endpoint.get('usedInFiles', []))} files"
+                    )
+                    print(
+                        f"  Auth required: {endpoint.get('authRequired', False)}"
+                    )
                     print(
                         f"  Database required: {endpoint.get('databaseRequired', False)}"
                     )
@@ -639,7 +665,9 @@ class EndpointHelper:
             if len(all_endpoints) == 0 and verbose:
                 print("\nNo endpoints were detected. You might want to try:")
                 print("  - Using all_files=True to scan all JS/TS files")
-                print("  - Using api_files=True to target likely API-related files")
+                print(
+                    "  - Using api_files=True to target likely API-related files"
+                )
                 print(
                     "  - Using react_hooks=True to find files using data fetching hooks"
                 )

@@ -1,7 +1,7 @@
 import json
 import os
 import traceback
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
 from fastapi import Depends, HTTPException
 
@@ -19,9 +19,9 @@ from src.app.utils.store_response import store_json_response
 class SetPriorityUseCase:
 
     def __init__(
-        self, 
+        self,
         openai_service: OpenAIService = Depends(OpenAIService),
-        error_repo: ErrorRepo = Depends()
+        error_repo: ErrorRepo = Depends(),
     ):
         self.openai_service = openai_service
         self.error_repo = error_repo
@@ -32,20 +32,28 @@ class SetPriorityUseCase:
             if not os.path.exists(json_file_path):
                 error_msg = f"Error in SetPriorityUseCase.set_priority: File not found: {json_file_path}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=404, detail=f"File not found: {json_file_path}")
-            
+                raise HTTPException(
+                    status_code=404, detail=f"File not found: {json_file_path}"
+                )
+
             try:
                 with open(json_file_path, "r") as file:
                     data = json.load(file)
             except json.JSONDecodeError as je:
                 error_msg = f"Error in SetPriorityUseCase.set_priority: Invalid JSON format in file {json_file_path}. Error: {str(je)}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=400, detail=f"Invalid JSON format in file: {json_file_path}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid JSON format in file: {json_file_path}",
+                )
             except IOError as ioe:
                 error_msg = f"Error in SetPriorityUseCase.set_priority: Failed to read file {json_file_path}. Error: {str(ioe)}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=500, detail=f"Failed to read file: {json_file_path}")
-            
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to read file: {json_file_path}",
+                )
+
             # Generate OpenAI completion
             try:
                 user_prompts = SET_PRIORITY_USER_PROMPT.format(context=data)
@@ -56,23 +64,29 @@ class SetPriorityUseCase:
             except Exception as oe:
                 error_msg = f"Error in SetPriorityUseCase.set_priority: OpenAI API error for file {json_file_path}. Error: {str(oe)}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=500, detail=f"Failed to generate priorities using AI: {str(oe)}")
-            
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to generate priorities using AI: {str(oe)}",
+                )
+
             # Parse the response
             try:
                 parsed_response = parse_response(response)
             except Exception as pe:
                 error_msg = f"Error in SetPriorityUseCase.set_priority: Failed to parse OpenAI response for file {json_file_path}. Error: {str(pe)}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=500, detail=f"Failed to parse AI response: {str(pe)}")
-            
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to parse AI response: {str(pe)}",
+                )
+
             # Extract the directory path from the input file
             input_dir = os.path.dirname(json_file_path)
 
             # Create output paths
             new_file_name = f"priority_end_points.json"
             output_path = os.path.join(input_dir, new_file_name)
-            
+
             # Store priority response
             try:
                 params = {
@@ -83,7 +97,10 @@ class SetPriorityUseCase:
             except Exception as se:
                 error_msg = f"Error in SetPriorityUseCase.set_priority: Failed to store priority response for file {json_file_path}. Error: {str(se)}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=500, detail=f"Failed to store priority response: {str(se)}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to store priority response: {str(se)}",
+                )
 
             # Sort the original JSON file content based on the prioritized endpoints
             try:
@@ -93,7 +110,10 @@ class SetPriorityUseCase:
             except Exception as sse:
                 error_msg = f"Error in SetPriorityUseCase.set_priority: Failed to sort endpoints based on priority for file {json_file_path}. Error: {str(sse)}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=500, detail=f"Failed to sort endpoints: {str(sse)}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to sort endpoints: {str(sse)}",
+                )
 
             # Save the sorted data to a new file
             try:
@@ -104,10 +124,13 @@ class SetPriorityUseCase:
             except Exception as we:
                 error_msg = f"Error in SetPriorityUseCase.set_priority: Failed to write sorted endpoints to file {sorted_output_path}. Error: {str(we)}"
                 await self._log_error(error_msg)
-                raise HTTPException(status_code=500, detail=f"Failed to write sorted endpoints to file: {str(we)}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to write sorted endpoints to file: {str(we)}",
+                )
 
             return sorted_data
-            
+
         except HTTPException:
             # Re-raise HTTPExceptions as they're already formatted properly
             raise
@@ -116,7 +139,10 @@ class SetPriorityUseCase:
             stack_trace = traceback.format_exc()
             error_msg = f"Unexpected error in SetPriorityUseCase.set_priority for file {json_file_path}. Error: {str(e)}. Trace: {stack_trace}"
             await self._log_error(error_msg)
-            raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"An unexpected error occurred: {str(e)}",
+            )
 
     def sort_endpoints_based_on_priority(
         self, original_data: Union[List, Dict], priority_data: Union[List, Dict]
@@ -137,17 +163,20 @@ class SetPriorityUseCase:
                 error_msg = "Error in SetPriorityUseCase.sort_endpoints_based_on_priority: Original data is empty"
                 # Can't await in a synchronous method
                 return original_data
-                
+
             if not priority_data:
                 error_msg = "Error in SetPriorityUseCase.sort_endpoints_based_on_priority: Priority data is empty"
                 # Can't await in a synchronous method
                 return original_data
-                
+
             # Handle the case where priority_data is a list of endpoints directly
             if isinstance(priority_data, list):
                 endpoints_list = priority_data
             # Handle the case where priority_data has an "end_points" key containing the list
-            elif isinstance(priority_data, dict) and "end_points" in priority_data:
+            elif (
+                isinstance(priority_data, dict)
+                and "end_points" in priority_data
+            ):
                 endpoints_list = priority_data["end_points"]
             else:
                 error_msg = f"Error in SetPriorityUseCase.sort_endpoints_based_on_priority: Unexpected priority data format: {type(priority_data)}"
@@ -215,14 +244,14 @@ class SetPriorityUseCase:
                         error_msg = "Error in SetPriorityUseCase.sort_endpoints_based_on_priority: Could not sort endpoints - unexpected data structure"
                         # Can't await in a synchronous method
                         sorted_data = original_data
-                        
+
                 return sorted_data
             except Exception as sort_e:
                 # If sorting fails, return the original data
                 error_msg = f"Error in SetPriorityUseCase.sort_endpoints_based_on_priority: Sorting failed. Error: {str(sort_e)}"
                 # Can't await in a synchronous method
                 return original_data
-                
+
         except Exception as e:
             # If there's an unexpected error, log it and return the original data
             stack_trace = traceback.format_exc()
