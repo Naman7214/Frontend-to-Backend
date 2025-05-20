@@ -139,7 +139,7 @@ class CodeGenerationUseCase:
                 ) in self.anthropic_service.stream_completions(
                     user_prompt=prompt,
                     system_prompt="You are a senior backend architect specializing in Node.js API development. Always use ES Module syntax (import/export) instead of CommonJS (require/module.exports). Include .js file extensions in all import paths. Create a consistent, modern architecture.",
-                    thinking_budget=4096,
+                    thinking_budget=0,
                 ):
                     if chunk_type == "text_delta":
                         response_text += chunk_content
