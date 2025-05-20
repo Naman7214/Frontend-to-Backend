@@ -11,10 +11,10 @@ from src.app.repositories.error_repository import ErrorRepo
 class ApiService:
     def __init__(self, error_repo: ErrorRepo = Depends(ErrorRepo)) -> None:
         self.timeout = httpx.Timeout(
-            connect=60.0,  # Time to establish a connection
-            read=600.0,  # Time to read the response
-            write=600.0,  # Time to send data
-            pool=60.0,  # Time to wait for a connection from the pool
+            connect=60.0,  
+            read=600.0,  
+            write=600.0,  
+            pool=60.0,  
         )
         self.error_repo = error_repo
 

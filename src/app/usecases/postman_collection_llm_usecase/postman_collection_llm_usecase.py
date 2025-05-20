@@ -70,6 +70,6 @@ class PostmanCollectionUsecase:
         output_file_path = os.path.join(input_dir, "postman_collection.json")
 
         with open(output_file_path, "w") as f:
-            json.dump(response['postman_collection'], f, indent=4)
+            json.dump(response["postman_collection"], f, indent=4)
 
         return response["postman_collection"]

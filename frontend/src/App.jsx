@@ -28,7 +28,6 @@ function App() {
     localStorage.setItem('theme', theme)
   }, [theme])
 
-  // Cleanup EventSource on unmount
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
@@ -39,10 +38,8 @@ function App() {
 
   const updateProcessingStep = (status) => {
     if (!status) return
-
     setProcessingSteps(prevSteps => {
       const updatedSteps = [...prevSteps]
-
       // Match status to steps and update accordingly
       if (status.includes('Starting code generation')) {
         updateStep(updatedSteps, 'clone', 'active')
@@ -55,12 +52,21 @@ function App() {
         updateStep(updatedSteps, 'extract', 'active')
       } else if (status.includes('endpoints extracted successfully')) {
         updateStep(updatedSteps, 'extract', 'completed')
+        // Activate both schema and priority steps simultaneously
         updateStep(updatedSteps, 'schema', 'active')
-      } else if (status.includes('schema and setting priorities')) {
+        updateStep(updatedSteps, 'priority', 'active')
+      } else if (status.includes('Generating database schema')) {
+        // When schema generation starts, also start showing priority as active
         updateStep(updatedSteps, 'schema', 'active')
         updateStep(updatedSteps, 'priority', 'active')
       } else if (status.includes('Database schema generated successfully')) {
+        // Mark schema as complete but keep priority active
         updateStep(updatedSteps, 'schema', 'completed')
+        // Keep priority spinner going
+        updateStep(updatedSteps, 'priority', 'active')
+      } else if (status.includes('Setting API endpoint priorities')) {
+        // Priority step is already active, but ensure it stays that way
+        updateStep(updatedSteps, 'priority', 'active')
       } else if (status.includes('endpoints prioritized successfully')) {
         updateStep(updatedSteps, 'priority', 'completed')
         updateStep(updatedSteps, 'generate', 'active')
@@ -75,7 +81,6 @@ function App() {
       } else if (status.includes('API codebase constructed and zipped successfully')) {
         updateStep(updatedSteps, 'construct', 'completed')
       }
-
       return updatedSteps
     })
   }
@@ -121,7 +126,6 @@ function App() {
     }
 
     try {
-      // Make the POST request to start the process and handle all events using fetch streaming
       const response = await fetch(`${API_BASE_URL}/stream-code-gen`, {
         method: 'POST',
         headers: {
@@ -157,7 +161,7 @@ function App() {
 
             // Process any complete events in the buffer
             const events = buffer.split('\n\n')
-            buffer = events.pop() || '' // Keep the last incomplete chunk in the buffer
+            buffer = events.pop() || '' 
 
             for (const eventData of events) {
               if (!eventData.trim()) continue

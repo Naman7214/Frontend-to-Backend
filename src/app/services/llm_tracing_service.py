@@ -14,7 +14,7 @@ from src.app.utils.tracing_context_utils import (
 
 class LLMTracer:
     def __init__(self):
-        self.traces = {}  # Storing the traces by their ids
+        self.traces = {}
 
     def get_trace(self, trace_id):
         return self.traces.get(trace_id)
@@ -26,7 +26,6 @@ class LLMTracer:
         return self.traces[trace_id]
 
 
-# Global tracer instance
 tracer = LLMTracer()
 
 

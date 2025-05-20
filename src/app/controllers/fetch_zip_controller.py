@@ -44,10 +44,8 @@ class FetchZipController:
                     detail=f"Invalid file format. Expected ZIP file: {zip_path}",
                 )
 
-            # Get file size for logging purposes
             file_size = os.path.getsize(zip_path)
 
-            # Open file and stream in chunks
             with open(zip_path, "rb") as file:
                 # Use a reasonable chunk size (1MB)
                 chunk_size = 1024 * 1024

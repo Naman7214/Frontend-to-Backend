@@ -169,29 +169,18 @@ class BackendCodeGenController:
             yield ("endpoints", simplified_end_points)
 
             # Generate database schema and set priorities in parallel
-            yield (
-                "status",
-                "Generating database schema and setting priorities in parallel...",
-            )
+            yield ("status", "Generating database schema...")
 
-            db_schema_task = asyncio.create_task(
-                self.db_schema_usecase.execute(
-                    json_file_path=f"Projects/{project_uuid}/endpoints.json",
-                    repo_path=repo_path,
-                )
+            schema_result = await self.db_schema_usecase.execute(
+                json_file_path=f"Projects/{project_uuid}/endpoints.json",
+                repo_path=repo_path,
             )
-
-            priority_task = asyncio.create_task(
-                self.set_priority_usecase.set_priority(
-                    json_file_path=f"Projects/{project_uuid}/endpoints.json"
-                )
-            )
-
-            # Wait for both tasks to complete
-            schema_result = await db_schema_task
             yield ("status", "Database schema generated successfully")
 
-            priority_result = await priority_task
+            yield ("status", "Setting API endpoint priorities...")
+            priority_result = await self.set_priority_usecase.set_priority(
+                json_file_path=f"Projects/{project_uuid}/endpoints.json"
+            )
             yield ("status", "API endpoints prioritized successfully")
 
             # Generate code and Postman collection in parallel
@@ -214,7 +203,6 @@ class BackendCodeGenController:
             postman_task = asyncio.create_task(
                 self.postman_collection_llm_usecase.execute(postman_input_path)
             )
-            
 
             postman_result = await postman_task
             yield ("status", "Postman collection generated successfully")

@@ -12,9 +12,7 @@ class DatabaseRepository:
         self.client = MongoClient(mongo_uri)
 
     def initialize_db_from_repo_path(self, repo_path: str) -> Database:
-        # Extract repository name from the path
         repo_name = os.path.basename(repo_path.rstrip("/"))
-        # Initialize database with repository name
         db = self.client[repo_name]
         return db
 

@@ -71,5 +71,4 @@ class MongoDB:
             )
 
 
-# Instantiate the MongoDB class
 mongodb_database = MongoDB(settings.MONGODB_URL)

@@ -2,11 +2,6 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # Groq settings
-    GROQ_API_KEY: str
-    GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
-    GROQ_COMPLETION_ENDPOINT: str = "/chat/completions"
-    GROQ_MODEL: str = "meta-llama/llama-4-maverick-17b-128e-instruct"
 
     # OpenAI settings
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"

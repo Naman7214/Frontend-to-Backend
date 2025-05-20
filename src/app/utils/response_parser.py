@@ -6,11 +6,9 @@ from typing import Any
 def parse_response(response) -> Any:
     response_str = str(response)
 
-    # First attempt: Try to parse the entire response as JSON directly
     try:
         return json.loads(response_str)
     except json.JSONDecodeError:
-        # If direct parsing fails, continue with the original approach
         pass
 
     # Second attempt: Find a valid JSON block with triple backticks
